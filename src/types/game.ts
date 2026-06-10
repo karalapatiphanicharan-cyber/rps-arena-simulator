@@ -1,5 +1,7 @@
 export type EntityType = 'rock' | 'paper' | 'scissors';
 
+export type ArenaShape = 'rectangle' | 'square' | 'circle' | 'triangle' | 'hexagon';
+
 export interface EntityData {
   id: string;
   x: number;
@@ -30,6 +32,7 @@ export interface GameState {
   status: GameStatus;
   winner: EntityType | null;
   playerNames: PlayerNames;
+  arenaShape: ArenaShape;
 }
 
 export interface ArenaDimensions {

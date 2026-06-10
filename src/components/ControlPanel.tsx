@@ -1,12 +1,14 @@
 import React from 'react';
-import type { GameCounts, PlayerNames, GameStatus } from '../types/game';
+import type { GameCounts, PlayerNames, GameStatus, ArenaShape } from '../types/game';
 
 interface ControlPanelProps {
   counts: GameCounts;
   playerNames: PlayerNames;
   status: GameStatus;
+  arenaShape: ArenaShape;
   onCountsChange: (counts: GameCounts) => void;
   onNamesChange: (names: PlayerNames) => void;
+  onShapeChange: (shape: ArenaShape) => void;
   onStart: () => void;
   onReset: () => void;
 }
@@ -15,8 +17,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   counts,
   playerNames,
   status,
+  arenaShape,
   onCountsChange,
   onNamesChange,
+  onShapeChange,
   onStart,
   onReset,
 }) => {
@@ -36,6 +40,33 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       <h2 className="section-title">⚙️ Game Controls</h2>
 
       <div className="section">
+        <h3 className="section-subtitle" style={{ fontSize: '1rem', color: '#94A3B8', marginBottom: '1rem' }}>Arena Settings</h3>
+        <div className="input-group">
+          <label>Arena Shape</label>
+          <select
+            value={arenaShape}
+            onChange={(e) => onShapeChange(e.target.value as ArenaShape)}
+            disabled={isRunning}
+            style={{
+                width: '100%',
+                background: '#111827',
+                border: '1px solid var(--border-color)',
+                borderRadius: '0.5rem',
+                padding: '0.625rem 0.875rem',
+                color: 'white',
+                fontSize: '0.875rem'
+            }}
+          >
+            <option value="rectangle">Rectangle</option>
+            <option value="square">Square</option>
+            <option value="circle">Circle</option>
+            <option value="triangle">Triangle</option>
+            <option value="hexagon">Hexagon</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="section" style={{ marginTop: '1.5rem' }}>
         <h3 className="section-subtitle" style={{ fontSize: '1rem', color: '#94A3B8', marginBottom: '1rem' }}>Player Names</h3>
         <div className="input-group">
           <label>Rock Name</label>

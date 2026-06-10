@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import './styles.css';
-import type { GameCounts, PlayerNames, GameStatus, EntityType } from './types/game';
+import type { GameCounts, PlayerNames, GameStatus, EntityType, ArenaShape } from './types/game';
 import { GameEngine } from './game/GameEngine';
 import ControlPanel from './components/ControlPanel';
 import ScoreBoard from './components/ScoreBoard';
@@ -24,6 +24,8 @@ function App() {
     paper: 'Paper',
     scissors: 'Scissors',
   });
+
+  const [arenaShape, setArenaShape] = useState<ArenaShape>('rectangle');
 
   const [gameState, setGameState] = useState<{
     status: GameStatus;
@@ -74,6 +76,7 @@ function App() {
   const handleStart = () => {
     if (engineRef.current) {
       setElapsedTime(0);
+      engineRef.current.setArenaShape(arenaShape);
       engineRef.current.spawn(counts);
       engineRef.current.start();
     }
@@ -91,9 +94,19 @@ function App() {
     handleStart();
   };
 
+  const handleShapeChange = (shape: ArenaShape) => {
+      setArenaShape(shape);
+      if (engineRef.current) {
+          engineRef.current.setArenaShape(shape);
+          engineRef.current.reset();
+      }
+  };
+
   const totalEntities = gameState.status === 'idle'
     ? counts.rock + counts.paper + counts.scissors
     : gameState.counts.rock + gameState.counts.paper + gameState.counts.scissors;
+
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   return (
     <div className="app-container">
@@ -108,8 +121,10 @@ function App() {
             counts={counts}
             playerNames={playerNames}
             status={gameState.status}
+            arenaShape={arenaShape}
             onCountsChange={setCounts}
             onNamesChange={setPlayerNames}
+            onShapeChange={handleShapeChange}
             onStart={handleStart}
             onReset={handleReset}
           />
@@ -117,7 +132,7 @@ function App() {
 
         <section className="arena-section">
           <div className="arena-header">
-            <h2 className="section-title">⚔ Battle Arena</h2>
+            <h2 className="section-title">⚔ Battle Arena: {capitalize(arenaShape)}</h2>
             <div className="stat-badge">
               Total Entities: <strong>{totalEntities}</strong>
             </div>
@@ -137,6 +152,7 @@ function App() {
             playerNames={playerNames}
             elapsedTime={elapsedTime}
             totalEntities={totalEntities}
+            arenaShape={arenaShape}
           />
         </aside>
       </main>

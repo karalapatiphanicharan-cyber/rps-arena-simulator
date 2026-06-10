@@ -10,6 +10,9 @@ export class Entity implements EntityData {
   radius: number;
   type: EntityType;
 
+  private readonly minSpeed = 1.5;
+  private readonly maxSpeed = 3.5;
+
   constructor(data: EntityData) {
     this.id = data.id;
     this.x = data.x;
@@ -18,28 +21,34 @@ export class Entity implements EntityData {
     this.velocityY = data.velocityY;
     this.radius = data.radius;
     this.type = data.type;
+    this.constrainSpeed();
   }
 
   update(arena: ArenaDimensions) {
     // Move
     this.x += this.velocityX;
     this.y += this.velocityY;
+  }
 
-    // Bounce off walls
-    if (this.x - this.radius < 0) {
-      this.x = this.radius;
-      this.velocityX *= -1;
-    } else if (this.x + this.radius > arena.width) {
-      this.x = arena.width - this.radius;
-      this.velocityX *= -1;
+  constrainSpeed() {
+    const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
+
+    if (speed === 0) {
+      // Give it a random kick if it's completely stopped
+      const angle = Math.random() * Math.PI * 2;
+      this.velocityX = Math.cos(angle) * this.minSpeed;
+      this.velocityY = Math.sin(angle) * this.minSpeed;
+      return;
     }
 
-    if (this.y - this.radius < 0) {
-      this.y = this.radius;
-      this.velocityY *= -1;
-    } else if (this.y + this.radius > arena.height) {
-      this.y = arena.height - this.radius;
-      this.velocityY *= -1;
+    if (speed < this.minSpeed) {
+      const ratio = this.minSpeed / speed;
+      this.velocityX *= ratio;
+      this.velocityY *= ratio;
+    } else if (speed > this.maxSpeed) {
+      const ratio = this.maxSpeed / speed;
+      this.velocityX *= ratio;
+      this.velocityY *= ratio;
     }
   }
 
