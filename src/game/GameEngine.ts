@@ -9,6 +9,7 @@ export class GameEngine {
   private arena: ArenaDimensions;
   private animationId: number | null = null;
   private onStateChange: (state: { counts: GameCounts; status: GameStatus; winner: EntityType | null }) => void;
+  private effectFlash: { active: boolean; type: EntityType | null; timer: number } = { active: false, type: null, timer: 0 };
 
   constructor(
     ctx: CanvasRenderingContext2D,
@@ -23,14 +24,13 @@ export class GameEngine {
   spawn(counts: GameCounts) {
     this.entities = [];
     const types: EntityType[] = ['rock', 'paper', 'scissors'];
-    const radius = 12;
+    const radius = 18;
 
     types.forEach((type) => {
       for (let i = 0; i < counts[type]; i++) {
         let x, y, colliding;
         let attempts = 0;
 
-        // Try to find a non-overlapping position
         do {
           x = radius + Math.random() * (this.arena.width - 2 * radius);
           y = radius + Math.random() * (this.arena.height - 2 * radius);
@@ -39,7 +39,7 @@ export class GameEngine {
           for (const entity of this.entities) {
             const dx = x - entity.x;
             const dy = y - entity.y;
-            if (Math.sqrt(dx * dx + dy * dy) < radius + entity.radius) {
+            if (Math.sqrt(dx * dx + dy * dy) < radius + entity.radius + 5) {
               colliding = true;
               break;
             }
@@ -47,8 +47,8 @@ export class GameEngine {
           attempts++;
         } while (colliding && attempts < 100);
 
-        const velocityX = (Math.random() - 0.5) * 4; // -2 to 2
-        const velocityY = (Math.random() - 0.5) * 4; // -2 to 2
+        const velocityX = (Math.random() - 0.5) * 4;
+        const velocityY = (Math.random() - 0.5) * 4;
 
         this.entities.push(
           new Entity({
@@ -92,10 +92,8 @@ export class GameEngine {
   }
 
   private update() {
-    // Update positions
     this.entities.forEach((entity) => entity.update(this.arena));
 
-    // Check collisions
     for (let i = 0; i < this.entities.length; i++) {
       for (let j = i + 1; j < this.entities.length; j++) {
         const e1 = this.entities[i];
@@ -104,23 +102,58 @@ export class GameEngine {
         if (checkCollision(e1, e2)) {
           resolveCollision(e1, e2);
 
-          // RPS Conversion
           const winnerType = getWinningType(e1.type, e2.type);
           if (winnerType) {
+            const changed = e1.type !== winnerType || e2.type !== winnerType;
             e1.type = winnerType;
             e2.type = winnerType;
+
+            if (changed) {
+              this.triggerFlash(winnerType);
+            }
           }
         }
       }
     }
 
+    if (this.effectFlash.timer > 0) {
+      this.effectFlash.timer--;
+    } else {
+      this.effectFlash.active = false;
+    }
+
     this.checkWinner();
   }
 
+  private triggerFlash(type: EntityType) {
+    this.effectFlash = {
+      active: true,
+      type: type,
+      timer: 5, // duration in frames
+    };
+  }
+
   private draw() {
-    this.ctx.fillStyle = '#1a1a1a';
-    this.ctx.fillRect(0, 0, this.arena.width, this.arena.height);
+    this.ctx.clearRect(0, 0, this.arena.width, this.arena.height);
+
+    // Draw background color if flash is active
+    if (this.effectFlash.active) {
+      this.ctx.fillStyle = this.getFlashColor(this.effectFlash.type);
+      this.ctx.globalAlpha = 0.3;
+      this.ctx.fillRect(0, 0, this.arena.width, this.arena.height);
+      this.ctx.globalAlpha = 1.0;
+    }
+
     this.entities.forEach((entity) => entity.draw(this.ctx));
+  }
+
+  private getFlashColor(type: EntityType | null): string {
+    switch (type) {
+      case 'rock': return '#FF4D4D';
+      case 'paper': return '#4D96FF';
+      case 'scissors': return '#FFD93D';
+      default: return 'white';
+    }
   }
 
   private checkWinner() {

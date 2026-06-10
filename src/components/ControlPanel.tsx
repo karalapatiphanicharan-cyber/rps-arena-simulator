@@ -1,5 +1,6 @@
 import React from 'react';
 import type { GameCounts, PlayerNames, GameStatus } from '../types/game';
+import { motion } from 'framer-motion';
 
 interface ControlPanelProps {
   counts: GameCounts;
@@ -32,7 +33,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   const isRunning = status === 'running';
 
   return (
-    <div className="control-panel">
+    <motion.div
+      className="neo-card control-panel"
+      initial={{ x: -100, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 100 }}
+    >
       <h2>Controls</h2>
 
       <div className="section">
@@ -98,14 +104,25 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       <div className="button-group">
-        <button onClick={onStart} disabled={isRunning} className="start-btn">
+        <motion.button
+          onClick={onStart}
+          disabled={isRunning}
+          className="neo-btn start-btn"
+          whileHover={{ x: -4, y: -4, boxShadow: "8px 8px 0px #000" }}
+          whileTap={{ x: 4, y: 4, boxShadow: "0px 0px 0px #000" }}
+        >
           Start Battle
-        </button>
-        <button onClick={onReset} className="reset-btn">
+        </motion.button>
+        <motion.button
+          onClick={onReset}
+          className="neo-btn reset-btn"
+          whileHover={{ x: -4, y: -4, boxShadow: "8px 8px 0px #000" }}
+          whileTap={{ x: 4, y: 4, boxShadow: "0px 0px 0px #000" }}
+        >
           Reset Battle
-        </button>
+        </motion.button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

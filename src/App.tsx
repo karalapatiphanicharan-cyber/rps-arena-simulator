@@ -5,6 +5,7 @@ import { GameEngine } from './game/GameEngine';
 import ControlPanel from './components/ControlPanel';
 import ScoreBoard from './components/ScoreBoard';
 import WinnerModal from './components/WinnerModal';
+import { motion } from 'framer-motion';
 
 const ARENA_WIDTH = 1000;
 const ARENA_HEIGHT = 600;
@@ -70,9 +71,22 @@ function App() {
 
   return (
     <div className="app-container">
-      <header>
+      <div className="background-decorations">
+        {/* Simple decorative elements */}
+        <div style={{ position: 'absolute', top: '10%', left: '5%', fontSize: '10rem', transform: 'rotate(-15deg)' }}>⚡</div>
+        <div style={{ position: 'absolute', top: '70%', left: '2%', fontSize: '8rem', transform: 'rotate(10deg)' }}>★</div>
+        <div style={{ position: 'absolute', top: '15%', right: '5%', fontSize: '12rem', transform: 'rotate(20deg)' }}>✷</div>
+        <div style={{ position: 'absolute', bottom: '10%', right: '8%', fontSize: '9rem', transform: 'rotate(-10deg)' }}>⚡</div>
+        <div style={{ position: 'absolute', top: '45%', left: '50%', fontSize: '15rem', opacity: 0.05 }}>RPS</div>
+      </div>
+
+      <motion.header
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 120 }}
+      >
         <h1>RPS ARENA ROYALE</h1>
-      </header>
+      </motion.header>
 
       <main className="main-layout">
         <ControlPanel
@@ -85,13 +99,23 @@ function App() {
           onReset={handleReset}
         />
 
-        <div className="arena-container">
+        <motion.div
+          className="arena-container"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
+        >
+          <div className="arena-corner corner-tl"></div>
+          <div className="arena-corner corner-tr"></div>
+          <div className="arena-corner corner-bl"></div>
+          <div className="arena-corner corner-br"></div>
+          <div className="arena-grid-overlay"></div>
           <canvas
             ref={canvasRef}
             width={ARENA_WIDTH}
             height={ARENA_HEIGHT}
           />
-        </div>
+        </motion.div>
 
         <ScoreBoard
           counts={gameState.status === 'idle' ? counts : gameState.counts}
