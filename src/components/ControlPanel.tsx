@@ -32,11 +32,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   const isRunning = status === 'running';
 
   return (
-    <div className="control-panel">
-      <h2>Controls</h2>
+    <div className="card control-panel">
+      <h2 className="section-title">⚙️ Game Controls</h2>
 
       <div className="section">
-        <h3>Player Names</h3>
+        <h3 className="section-subtitle" style={{ fontSize: '1rem', color: '#94A3B8', marginBottom: '1rem' }}>Player Names</h3>
         <div className="input-group">
           <label>Rock Name</label>
           <input
@@ -44,6 +44,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             value={playerNames.rock}
             onChange={(e) => handleNameChange('rock', e.target.value)}
             disabled={isRunning}
+            placeholder="Enter rock name..."
           />
         </div>
         <div className="input-group">
@@ -53,6 +54,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             value={playerNames.paper}
             onChange={(e) => handleNameChange('paper', e.target.value)}
             disabled={isRunning}
+            placeholder="Enter paper name..."
           />
         </div>
         <div className="input-group">
@@ -62,12 +64,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             value={playerNames.scissors}
             onChange={(e) => handleNameChange('scissors', e.target.value)}
             disabled={isRunning}
+            placeholder="Enter scissors name..."
           />
         </div>
       </div>
 
-      <div className="section">
-        <h3>Entity Counts</h3>
+      <div className="section" style={{ marginTop: '1.5rem' }}>
+        <h3 className="section-subtitle" style={{ fontSize: '1rem', color: '#94A3B8', marginBottom: '1rem' }}>Entity Counts</h3>
         <div className="input-group">
           <label>Rock Count</label>
           <input
@@ -75,6 +78,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             value={counts.rock}
             onChange={(e) => handleCountChange('rock', e.target.value)}
             disabled={isRunning}
+            min="0"
           />
         </div>
         <div className="input-group">
@@ -84,6 +88,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             value={counts.paper}
             onChange={(e) => handleCountChange('paper', e.target.value)}
             disabled={isRunning}
+            min="0"
           />
         </div>
         <div className="input-group">
@@ -93,16 +98,21 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             value={counts.scissors}
             onChange={(e) => handleCountChange('scissors', e.target.value)}
             disabled={isRunning}
+            min="0"
           />
         </div>
       </div>
 
       <div className="button-group">
-        <button onClick={onStart} disabled={isRunning} className="start-btn">
-          Start Battle
+        <button
+          onClick={onStart}
+          disabled={isRunning}
+          className="btn btn-start"
+        >
+          {status === 'finished' ? 'Start New Battle' : 'Start Battle'}
         </button>
-        <button onClick={onReset} className="reset-btn">
-          Reset Battle
+        <button onClick={onReset} className="btn btn-reset">
+          Reset Arena
         </button>
       </div>
     </div>
