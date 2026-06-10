@@ -118,7 +118,7 @@ export class GameEngine {
   }
 
   private draw() {
-    this.ctx.fillStyle = '#1a1a1a';
+    this.ctx.fillStyle = '#111827';
     this.ctx.fillRect(0, 0, this.arena.width, this.arena.height);
     this.entities.forEach((entity) => entity.draw(this.ctx));
   }
