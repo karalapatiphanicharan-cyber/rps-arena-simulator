@@ -1,6 +1,20 @@
 import React from 'react';
-import type { GameCounts, PlayerNames, GameStatus, ArenaShape, TournamentType, ObstacleDensity } from '../types/game';
+import type {
+    GameCounts,
+    PlayerNames,
+    GameStatus,
+    ArenaShape,
+    TournamentType,
+    ObstacleDensity,
+    TournamentState,
+    ArenaPreset,
+    CrazyEventName
+} from '../types/game';
 import CollapsibleSection from './CollapsibleSection';
+import TournamentDashboard from './TournamentDashboard';
+import ArenaBuilder from './ArenaBuilder';
+import DevPanel from './DevPanel';
+import CrazyEventHistory from './CrazyEventHistory';
 
 interface ControlPanelProps {
   counts: GameCounts;
@@ -9,6 +23,7 @@ interface ControlPanelProps {
   arenaShape: ArenaShape;
   simulationSpeed: number;
   tournamentType: TournamentType;
+  tournamentState: TournamentState;
   onCountsChange: (counts: GameCounts) => void;
   onNamesChange: (names: PlayerNames) => void;
   onShapeChange: (shape: ArenaShape) => void;
@@ -23,10 +38,19 @@ interface ControlPanelProps {
   onObstaclesChange: (density: ObstacleDensity) => void;
   powerZones: boolean;
   onPowerZonesToggle: (enabled: boolean) => void;
+  // Random Modes
   onRandomBattle: () => void;
   onRandomTournament: () => void;
   autoPlay: boolean;
   onAutoPlayToggle: (enabled: boolean) => void;
+  // Arena Builder
+  onLoadPreset: (preset: ArenaPreset) => void;
+  onSaveArena: (name: string) => void;
+  onClearArena: () => void;
+  // Crazy History
+  crazyHistory: CrazyEventName[];
+  // Dev Tools
+  onTriggerCrazyEvent: (name: CrazyEventName) => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -36,6 +60,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   arenaShape,
   simulationSpeed,
   tournamentType,
+  tournamentState,
   onCountsChange,
   onNamesChange,
   onShapeChange,
@@ -54,6 +79,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onRandomTournament,
   autoPlay,
   onAutoPlayToggle,
+  onLoadPreset,
+  onSaveArena,
+  onClearArena,
+  crazyHistory,
+  onTriggerCrazyEvent,
 }) => {
   const handleCountChange = (type: keyof GameCounts, value: string) => {
     const numValue = parseInt(value) || 0;
@@ -80,41 +110,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <button onClick={onReset} className="btn btn-reset">
               Reset Arena
             </button>
-            <button onClick={onResetTournament} className="btn" style={{ background: '#4B5563', color: 'white' }}>
-              Restart Tournament
-            </button>
-            <button
-                onClick={onRandomBattle}
-                className="btn"
-                style={{ background: '#8B5CF6', color: 'white' }}
-                disabled={status === 'running' || status === 'paused'}
-            >
-                🎲 Random Battle
-            </button>
-            <button
-                onClick={onRandomTournament}
-                className="btn"
-                style={{ background: '#EC4899', color: 'white' }}
-                disabled={status === 'running' || status === 'paused'}
-            >
-                🎰 Random Tournament
-            </button>
-          </div>
-
-          <div className="input-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-            <label style={{ margin: 0, fontSize: '0.8rem' }}>▶ Auto Play</label>
-            <button
-              onClick={() => onAutoPlayToggle(!autoPlay)}
-              className="btn"
-              style={{
-                  background: autoPlay ? '#10B981' : '#374151',
-                  padding: '0.25rem 0.75rem',
-                  minWidth: '60px',
-                  fontSize: '0.7rem'
-              }}
-            >
-              {autoPlay ? 'ON' : 'OFF'}
-            </button>
           </div>
       </div>
 
@@ -134,21 +129,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               {crazyMode ? 'ON 🎭' : 'OFF'}
             </button>
           </div>
-
-          <div className="input-group">
-            <label>Tournament Type</label>
-            <select
-              value={tournamentType}
-              onChange={(e) => onTournamentTypeChange(e.target.value as TournamentType)}
-              disabled={status === 'running' || status === 'paused'}
-              className="modern-select"
-            >
-              <option value="single">Single Match</option>
-              <option value="bo3">Best of 3</option>
-              <option value="bo5">Best of 5</option>
-              <option value="bo7">Best of 7</option>
-            </select>
-          </div>
+          {crazyMode && (
+              <div style={{ marginTop: '1rem', borderTop: '1px solid #374151', paddingTop: '1rem' }}>
+                  <label style={{ fontSize: '0.8rem', color: '#94A3B8', display: 'block', marginBottom: '0.5rem' }}>Crazy History</label>
+                  <CrazyEventHistory history={crazyHistory} />
+              </div>
+          )}
         </div>
       </CollapsibleSection>
 
@@ -217,7 +203,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Player Settings" defaultExpanded icon="👥">
+      <CollapsibleSection title="Player Settings" defaultExpanded={false} icon="👥">
         <div className="section">
           <h3 className="section-subtitle" style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '0.5rem' }}>Player Names</h3>
           <div className="input-group">
@@ -278,6 +264,87 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
         </div>
       </CollapsibleSection>
+
+      <CollapsibleSection title="🏆 Tournament" defaultExpanded={tournamentState.type !== 'single'} icon="🏆">
+          <div className="section">
+              <TournamentDashboard state={tournamentState} playerNames={playerNames} />
+              <div className="input-group" style={{ marginTop: '1rem' }}>
+                <label>Tournament Type</label>
+                <select
+                  value={tournamentType}
+                  onChange={(e) => onTournamentTypeChange(e.target.value as TournamentType)}
+                  disabled={status === 'running' || status === 'paused'}
+                  className="modern-select"
+                >
+                  <option value="single">Single Match</option>
+                  <option value="bo3">Best of 3</option>
+                  <option value="bo5">Best of 5</option>
+                  <option value="bo7">Best of 7</option>
+                </select>
+              </div>
+              <button
+                onClick={onResetTournament}
+                className="btn"
+                style={{ background: '#4B5563', color: 'white', width: '100%', marginTop: '1rem' }}
+              >
+                Restart Tournament
+              </button>
+          </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="🎲 Random Modes" defaultExpanded={false} icon="🎲">
+          <div className="section">
+              <div className="button-group" style={{ marginTop: 0 }}>
+                  <button
+                      onClick={onRandomBattle}
+                      className="btn"
+                      style={{ background: '#8B5CF6', color: 'white' }}
+                      disabled={status === 'running' || status === 'paused'}
+                  >
+                      Random Battle
+                  </button>
+                  <button
+                      onClick={onRandomTournament}
+                      className="btn"
+                      style={{ background: '#EC4899', color: 'white' }}
+                      disabled={status === 'running' || status === 'paused'}
+                  >
+                      Random Tournament
+                  </button>
+              </div>
+              <div className="input-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+                <label style={{ margin: 0, fontSize: '0.8rem' }}>▶ Auto Play</label>
+                <button
+                  onClick={() => onAutoPlayToggle(!autoPlay)}
+                  className="btn"
+                  style={{
+                      background: autoPlay ? '#10B981' : '#374151',
+                      padding: '0.25rem 0.75rem',
+                      minWidth: '60px',
+                      fontSize: '0.7rem'
+                  }}
+                >
+                  {autoPlay ? 'ON' : 'OFF'}
+                </button>
+              </div>
+          </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="🏗 Arena Builder" defaultExpanded={false} icon="🏗️">
+        <ArenaBuilder
+            onLoadPreset={onLoadPreset}
+            onSaveArena={onSaveArena}
+            onClearArena={onClearArena}
+            currentShape={arenaShape}
+            onShapeChange={onShapeChange}
+        />
+      </CollapsibleSection>
+
+      {crazyMode && (
+        <CollapsibleSection title="🛠 Developer Tools" defaultExpanded={false} icon="🛠️">
+          <DevPanel onTriggerEvent={onTriggerCrazyEvent} enabled={crazyMode} />
+        </CollapsibleSection>
+      )}
     </div>
   );
 };
