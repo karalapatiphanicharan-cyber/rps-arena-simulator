@@ -597,3 +597,54 @@ canvas {
 .badge-status.obs { background: #4B5563; color: white; }
 .badge-status.zones { background: #A855F7; color: white; }
 .badge-status.custom { background: #1E3A8A; color: white; }
+
+/* Empty Arena Overlay */
+.empty-arena-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+  pointer-events: none;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 2rem;
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.empty-message h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-color);
+}
+
+.empty-message p {
+  color: #94A3B8;
+  margin-top: 0.5rem;
+  font-size: 1rem;
+}
+
+.help-sections-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.help-sections-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
