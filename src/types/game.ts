@@ -75,6 +75,10 @@ export interface GameStats {
   elapsedTime: number;
   arenaShape: ArenaShape;
   crazyMode?: CrazyModeStats;
+  obstacleCollisions: number;
+  speedZoneVisits: number;
+  slowZoneVisits: number;
+  chaosZoneVisits: number;
 }
 
 export type TournamentType = 'single' | 'bo3' | 'bo5' | 'bo7';
@@ -102,6 +106,28 @@ export interface TournamentState {
   stats: TournamentStats;
 }
 
+export type ObstacleDensity = 'off' | 'low' | 'medium' | 'high';
+
+export interface Obstacle {
+  id: string;
+  type: 'wall' | 'boulder' | 'moving';
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  radius?: number;
+  velocityX?: number;
+  velocityY?: number;
+}
+
+export interface PowerZone {
+  id: string;
+  type: 'speed' | 'slow' | 'chaos';
+  x: number;
+  y: number;
+  radius: number;
+}
+
 export interface GameState {
   counts: GameCounts;
   status: GameStatus;
@@ -112,6 +138,8 @@ export interface GameState {
   simulationSpeed: number;
   tournament: TournamentState;
   crazyMode: CrazyModeState;
+  obstacles: ObstacleDensity;
+  powerZones: boolean;
 }
 
 export interface ArenaDimensions {
