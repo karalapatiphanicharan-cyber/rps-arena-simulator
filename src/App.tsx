@@ -315,6 +315,8 @@ function App() {
              </button>
           </div>
 
+          <CrazyEventBanner event={gameState.crazyMode.activeEvent} />
+
           <div className="arena-header">
             <h2 className="section-title arena-title">⚔ Battle Arena: {capitalize(arenaShape)}</h2>
             <div className="stat-badge arena-stat-badge">
@@ -322,7 +324,6 @@ function App() {
             </div>
           </div>
           <div className="arena-container">
-            <CrazyEventBanner event={gameState.crazyMode.activeEvent} />
             <canvas
               ref={canvasRef}
               width={ARENA_WIDTH}
