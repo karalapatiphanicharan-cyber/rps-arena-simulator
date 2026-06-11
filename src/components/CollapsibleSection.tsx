@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface CollapsibleSectionProps {
   title: string;
   children: React.ReactNode;
   defaultExpanded?: boolean;
+  expanded?: boolean;
+  onToggle?: (expanded: boolean) => void;
   icon?: string;
   badge?: string | number;
 }
@@ -12,16 +14,35 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   title,
   children,
   defaultExpanded = false,
+  expanded,
+  onToggle,
   icon,
   badge
 }) => {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
+
+  useEffect(() => {
+      if (expanded !== undefined) {
+          setInternalExpanded(expanded);
+      }
+  }, [expanded]);
+
+  const isExpanded = expanded !== undefined ? expanded : internalExpanded;
+
+  const handleToggle = () => {
+      const newState = !isExpanded;
+      if (onToggle) {
+          onToggle(newState);
+      } else {
+          setInternalExpanded(newState);
+      }
+  };
 
   return (
     <div className={`collapsible-section ${isExpanded ? 'is-expanded' : 'is-collapsed'}`}>
       <button
         className="collapsible-header"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleToggle}
         aria-expanded={isExpanded}
       >
         <div className="header-left">
@@ -33,11 +54,11 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           {isExpanded ? '−' : '+'}
         </span>
       </button>
-      {isExpanded && (
+      <div className={`collapsible-content-wrapper ${isExpanded ? 'open' : 'closed'}`}>
         <div className="collapsible-content">
           {children}
         </div>
-      )}
+      </div>
     </div>
   );
 };

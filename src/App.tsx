@@ -39,6 +39,23 @@ function App() {
 
   const [showLeftDrawer, setShowLeftDrawer] = useState(false);
   const [showRightDrawer, setShowRightDrawer] = useState(false);
+  const [leftExpanded, setLeftExpanded] = useState<Record<string, boolean>>({
+      controls: true,
+      arena: false,
+      adv: false,
+      players: true,
+      tournament: false,
+      random: false,
+      builder: false
+  });
+  const [rightExpanded, setRightExpanded] = useState<Record<string, boolean>>({
+      scoreboard: true,
+      stats: false,
+      advStats: false,
+      history: false,
+      feed: false,
+      help: false
+  });
 
   const [counts, setCounts] = useState<GameCounts>({
     rock: 10,
@@ -169,6 +186,7 @@ function App() {
     soundManager.setEnabled(!isMuted);
   }, [isMuted]);
 
+
   useEffect(() => {
       const canvas = canvasRef.current;
       if (!canvas || !engineRef.current) return;
@@ -249,7 +267,7 @@ function App() {
       };
   }, [gameState.status, gameState.manualObstacles, gameState.manualPowerZones, selectedTool]);
 
-  const handleStart = (skipFeatureGeneration: boolean = false) => {
+  const handleStart = useCallback((skipFeatureGeneration: boolean = false) => {
     if (engineRef.current) {
       if (nextRoundTimerRef.current) {
           clearTimeout(nextRoundTimerRef.current);
@@ -260,17 +278,17 @@ function App() {
       engineRef.current.spawn(counts, skipFeatureGeneration);
       engineRef.current.start();
     }
-  };
+  }, [arenaShape, counts]);
 
-  const handlePause = () => {
+  const handlePause = useCallback(() => {
     if (engineRef.current) engineRef.current.pause();
-  };
+  }, []);
 
-  const handleResume = () => {
+  const handleResume = useCallback(() => {
     if (engineRef.current) engineRef.current.start();
-  };
+  }, []);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     if (engineRef.current) {
       engineRef.current.reset();
       if (nextRoundTimerRef.current) {
@@ -278,7 +296,7 @@ function App() {
           nextRoundTimerRef.current = null;
       }
     }
-  };
+  }, []);
 
   const handleResetTournament = () => {
       const newState = TournamentManager.getInitialState(tournamentType);
@@ -287,10 +305,62 @@ function App() {
       handleReset();
   };
 
-  const handleRestart = (skipFeatureGeneration: boolean = false) => {
+  const handleRestoreDefaults = useCallback(() => {
+      const defaultCounts = { rock: 10, paper: 10, scissors: 10 };
+      setCounts(defaultCounts);
+      setArenaShape('rectangle');
+      setSimulationSpeed(1);
+      setTournamentType('single');
+      setTournamentState(TournamentManager.getInitialState('single'));
+      setCrazyMode(false);
+      setObstacles('off');
+      setPowerZones(false);
+      setAutoPlay(false);
+      setUnitClasses(false);
+      setAdvancedAI(false);
+      setClassDist('normal');
+      setAIDist('random');
+
+      if (engineRef.current) {
+          engineRef.current.setArenaShape('rectangle');
+          engineRef.current.setSimulationSpeed(1);
+          engineRef.current.setCrazyMode(false);
+          engineRef.current.setObstacles('off');
+          engineRef.current.setPowerZones(false);
+          engineRef.current.setAdvancedSimulation(false, false, 'normal', 'random');
+          engineRef.current.reset();
+      }
+  }, []);
+
+  const handleRestart = useCallback((skipFeatureGeneration: boolean = false) => {
     handleReset();
     handleStart(skipFeatureGeneration);
-  };
+  }, [handleReset, handleStart]);
+
+  useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+          if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+
+          switch(e.code) {
+              case 'Space':
+                  e.preventDefault();
+                  if (gameState.status === 'running') handlePause();
+                  else if (gameState.status === 'paused') handleResume();
+                  break;
+              case 'KeyR':
+                  handleRestart();
+                  break;
+              case 'KeyS':
+                  if (gameState.status === 'idle' || gameState.status === 'finished') handleStart();
+                  break;
+              case 'KeyD':
+                  handleRestoreDefaults();
+                  break;
+          }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState.status, handlePause, handleResume, handleRestart, handleStart, handleRestoreDefaults]);
 
   const handleShapeChange = (shape: ArenaShape) => {
       setArenaShape(shape);
@@ -559,6 +629,19 @@ function App() {
             <h3>Game Controls</h3>
             <button className="close-drawer" onClick={() => setShowLeftDrawer(false)}>×</button>
           </div>
+
+          <div className="sidebar-top-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setLeftExpanded(Object.keys(leftExpanded).reduce((acc, k) => ({...acc, [k]: false}), {}))}
+              >
+                  ⬆ Collapse All
+              </button>
+              <button className="btn btn-secondary" onClick={handleRestoreDefaults}>
+                  🔄 Restore Defaults
+              </button>
+          </div>
+
           <ControlPanel
             counts={counts}
             playerNames={playerNames}
@@ -601,6 +684,8 @@ function App() {
             onClassDistChange={handleClassDistChange}
             onAIDistChange={handleAIDistChange}
             onTriggerCrazyEvent={handleTriggerCrazyEvent}
+            expandedStates={leftExpanded}
+            onToggleSection={(key, val) => setLeftExpanded(prev => ({...prev, [key]: val}))}
           />
 
           <div className="card mute-card">
@@ -658,7 +743,17 @@ function App() {
           <CrazyEventBanner event={gameState.crazyMode.activeEvent} />
 
           <div className="arena-header">
-            <h2 className="section-title arena-title">⚔ Battle Arena: {capitalize(arenaShape)}</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <h2 className="section-title arena-title">⚔ Battle Arena: {capitalize(arenaShape)}</h2>
+                <div className="active-badges" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {advancedAI && <span className="badge-status ai">🧠 AI ON</span>}
+                    {unitClasses && <span className="badge-status classes">🛡 CLASSES ON</span>}
+                    {crazyMode && <span className="badge-status crazy">🎭 CRAZY ON</span>}
+                    {obstacles !== 'off' && <span className="badge-status obs">🧱 OBSTACLES: {obstacles.toUpperCase()}</span>}
+                    {powerZones && <span className="badge-status zones">⚡ ZONES ON</span>}
+                    {(gameState.manualObstacles.length > 0 || gameState.manualPowerZones.length > 0) && <span className="badge-status custom">🏗 CUSTOM ARENA</span>}
+                </div>
+            </div>
             <div className="stat-badge arena-stat-badge">
               Total Entities: <strong>{totalEntities}</strong>
             </div>
@@ -681,8 +776,20 @@ function App() {
             <h3>Live Stats</h3>
             <button className="close-drawer" onClick={() => setShowRightDrawer(false)}>×</button>
           </div>
+
+          <div className="sidebar-top-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setRightExpanded(Object.keys(rightExpanded).reduce((acc, k) => ({...acc, [k]: false}), {}))}
+              >
+                  ⬆ Collapse All
+              </button>
+          </div>
+
           <ScoreBoard
             playerNames={playerNames}
+            expandedStates={rightExpanded}
+            onToggleSection={(key, val) => setRightExpanded(prev => ({...prev, [key]: val}))}
             stats={{
                 ...gameState.stats,
                 counts: currentCounts,
@@ -691,7 +798,12 @@ function App() {
             tournament={tournamentState}
           />
 
-          <CollapsibleSection title="Match History" defaultExpanded={false} icon="📋">
+          <CollapsibleSection
+            title="Match History"
+            expanded={rightExpanded.history}
+            onToggle={(v) => setRightExpanded(p => ({...p, history: v}))}
+            icon="📋"
+          >
             <MatchHistory
                 history={tournamentState.history}
                 playerNames={playerNames}
@@ -699,11 +811,21 @@ function App() {
             />
           </CollapsibleSection>
 
-          <CollapsibleSection title="Battle Feed" defaultExpanded={false} icon="⚡">
+          <CollapsibleSection
+            title="Battle Feed"
+            expanded={rightExpanded.feed}
+            onToggle={(v) => setRightExpanded(p => ({...p, feed: v}))}
+            icon="⚡"
+          >
             <BattleFeed events={gameState.events} />
           </CollapsibleSection>
 
-          <CollapsibleSection title="Help & Guide" defaultExpanded={false} icon="❓">
+          <CollapsibleSection
+            title="Help & Guide"
+            expanded={rightExpanded.help}
+            onToggle={(v) => setRightExpanded(p => ({...p, help: v}))}
+            icon="❓"
+          >
             <HelpCenter />
           </CollapsibleSection>
         </aside>

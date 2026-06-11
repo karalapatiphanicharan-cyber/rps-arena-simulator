@@ -338,9 +338,24 @@ canvas {
   color: #94A3B8;
 }
 
+.collapsible-content-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease-out;
+}
+
+.collapsible-content-wrapper.open {
+  grid-template-rows: 1fr;
+}
+
 .collapsible-content {
-  padding: 0 1rem 1rem 1rem;
+  overflow: hidden;
+  padding: 0 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.collapsible-content-wrapper.open .collapsible-content {
+  padding-bottom: 1rem;
   padding-top: 1rem;
 }
 
@@ -549,3 +564,36 @@ canvas {
     aspect-ratio: 16/9;
   }
 }
+
+.sidebar-top-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.btn-secondary {
+  background: #374151;
+  color: #94A3B8;
+  font-size: 0.7rem !important;
+  flex: 1;
+}
+
+.btn-secondary:hover {
+  background: #4B5563;
+  color: white;
+}
+
+.badge-status {
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.badge-status.ai { background: #8B5CF6; color: white; }
+.badge-status.classes { background: #10B981; color: white; }
+.badge-status.crazy { background: #F97316; color: white; }
+.badge-status.obs { background: #4B5563; color: white; }
+.badge-status.zones { background: #A855F7; color: white; }
+.badge-status.custom { background: #1E3A8A; color: white; }
