@@ -40,8 +40,8 @@ export class CrazyEventManager {
     }
 
     private setNextEventDelay() {
-        // Events every 10-20 seconds
-        this.nextEventDelay = (Math.random() * 10 + 10) * 1000;
+        // Events every 8-15 seconds
+        this.nextEventDelay = (Math.random() * 7 + 8) * 1000;
     }
 
     update(): CrazyEvent | null {
@@ -52,6 +52,7 @@ export class CrazyEventManager {
         // Handle active event expiration
         if (this.state.activeEvent) {
             if (now - this.state.activeEvent.startTime > this.state.activeEvent.duration) {
+                console.log(`Event Ended: ${this.state.activeEvent.name}`);
                 this.state.activeEvent = null;
                 this.lastEventTime = now;
                 this.setNextEventDelay();
@@ -68,31 +69,47 @@ export class CrazyEventManager {
     }
 
     private triggerRandomEvent() {
-        const events: { name: CrazyEventName; icon: string; color: string; duration: number }[] = [
-            { name: 'Speed Boost', icon: '⚡', color: '#FACC15', duration: 10000 },
-            { name: 'Freeze Wave', icon: '❄', color: '#3B82F6', duration: 8000 },
-            { name: 'Double Population', icon: '🎲', color: '#10B981', duration: 3000 }, // Short duration as it's an instant action event
-            { name: 'Meteor Strike', icon: '☄', color: '#EF4444', duration: 5000 },
-            { name: 'Reverse Rules', icon: '🔄', color: '#A855F7', duration: 15000 },
-            { name: 'Giant Entity', icon: '👑', color: '#F97316', duration: 15000 },
-            { name: 'Chaos Storm', icon: '🌪', color: '#94A3B8', duration: 2000 }
+        const events: CrazyEventName[] = [
+            'Speed Boost',
+            'Freeze Wave',
+            'Double Population',
+            'Meteor Strike',
+            'Reverse Rules',
+            'Giant Entity',
+            'Chaos Storm'
         ];
+        const randomName = events[Math.floor(Math.random() * events.length)];
+        return this.triggerEvent(randomName);
+    }
 
-        const randomEvent = events[Math.floor(Math.random() * events.length)];
+    public triggerEvent(name: CrazyEventName): CrazyEvent {
+        const eventConfigs: Record<CrazyEventName, { icon: string; color: string; duration: number }> = {
+            'Speed Boost': { icon: '⚡', color: '#FACC15', duration: 10000 },
+            'Freeze Wave': { icon: '❄', color: '#3B82F6', duration: 8000 },
+            'Double Population': { icon: '🎲', color: '#10B981', duration: 3000 },
+            'Meteor Strike': { icon: '☄', color: '#EF4444', duration: 5000 },
+            'Reverse Rules': { icon: '🔄', color: '#A855F7', duration: 15000 },
+            'Giant Entity': { icon: '👑', color: '#F97316', duration: 15000 },
+            'Chaos Storm': { icon: '🌪', color: '#94A3B8', duration: 2000 }
+        };
+
+        const config = eventConfigs[name];
 
         const event: CrazyEvent = {
             id: `event-${Date.now()}`,
-            name: randomEvent.name,
-            icon: randomEvent.icon,
-            color: randomEvent.color,
+            name: name,
+            icon: config.icon,
+            color: config.color,
             startTime: Date.now(),
-            duration: randomEvent.duration,
-            data: this.getEventData(randomEvent.name)
+            duration: config.duration,
+            data: this.getEventData(name)
         };
 
         this.state.activeEvent = event;
         this.state.history = [event.name, ...this.state.history].slice(0, 5);
         this.state.stats.eventsTriggered++;
+
+        console.log(`Event Started: ${name}`);
 
         // Update specific stats
         if (event.name === 'Speed Boost') this.state.stats.speedBoostActivations++;
@@ -130,10 +147,16 @@ export class CrazyEventManager {
     }
 
     addMeteorEliminations(count: number) {
-        this.state.stats.meteorEliminations += count;
+        if (count > 0) {
+            this.state.stats.meteorEliminations += count;
+            console.log(`Entities Affected (Meteor): ${count}`);
+        }
     }
 
     addFreezeCount(count: number) {
-        this.state.stats.freezeCount += count;
+        if (count > 0) {
+            this.state.stats.freezeCount += count;
+            console.log(`Entities Affected (Freeze): ${count}`);
+        }
     }
 }

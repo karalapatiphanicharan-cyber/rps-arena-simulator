@@ -7,7 +7,8 @@ import type {
   ArenaShape,
   BattleEvent,
   GameStats,
-  GameState
+  GameState,
+  CrazyEventName
 } from '../types/game';
 import { checkCollision, resolveCollision } from './Collision';
 import { getWinningType } from './Rules';
@@ -61,6 +62,13 @@ export class GameEngine {
   setCrazyMode(enabled: boolean) {
       this.crazyEventManager.setEnabled(enabled);
       this.notifyState();
+  }
+
+  triggerCrazyEvent(name: CrazyEventName) {
+      if (this.crazyEventManager.getState().enabled) {
+          this.crazyEventManager.triggerEvent(name);
+          this.notifyState();
+      }
   }
 
   private isInside(x: number, y: number, radius: number): boolean {
@@ -265,10 +273,17 @@ export class GameEngine {
             const count = Math.floor(toDuplicate.length * 0.2);
             for(let i=0; i<count; i++) {
                 const source = toDuplicate[Math.floor(Math.random() * toDuplicate.length)];
-                this.entities.push(new Entity({
-                    ...source,
-                    id: `${type}-dup-${Date.now()}-${i}`
-                }));
+                if (source) {
+                    this.entities.push(new Entity({
+                        id: `${type}-dup-${Date.now()}-${i}`,
+                        x: source.x,
+                        y: source.y,
+                        velocityX: (Math.random() - 0.5) * 4,
+                        velocityY: (Math.random() - 0.5) * 4,
+                        radius: source.radius,
+                        type: type
+                    }));
+                }
             }
             activeEvent.data.applied = true;
         }
@@ -307,17 +322,15 @@ export class GameEngine {
                 soundManager.playWinner(); // Using winner sound as explosion placeholder
             } else if (!impacted) {
                 // Add warning effect periodically
-                if (Math.random() < 0.1) {
-                    this.effectManager.addEffect({
-                        id: `meteor-warn-${Date.now()}`,
-                        x: targetX,
-                        y: targetY,
-                        type: 'meteor_warning',
-                        startTime: Date.now(),
-                        duration: 500,
-                        radius: radius
-                    });
-                }
+                this.effectManager.addEffect({
+                    id: `meteor-warn-${Date.now()}`,
+                    x: targetX,
+                    y: targetY,
+                    type: 'meteor_warning',
+                    startTime: Date.now(),
+                    duration: 100, // Very short for consistent pulse
+                    radius: radius
+                });
             }
         }
     } else {
