@@ -125,6 +125,32 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
           </CollapsibleSection>
       )}
 
+      {stats.advanced && (
+          <CollapsibleSection title="Advanced Stats" defaultExpanded={false} icon="🧠">
+              <div className="stats-grid">
+                  <div className="stat-group-title" style={{ fontSize: '0.7rem', color: '#94A3B8', marginTop: '0.5rem', borderBottom: '1px solid #374151' }}>Class Wins</div>
+                  <div className="stat-item">
+                      <span className="stat-label">⚡ Speed / 🛡 Tank</span>
+                      <span className="stat-value">{stats.advanced.classStats.speedWins} / {stats.advanced.classStats.tankWins}</span>
+                  </div>
+                  <div className="stat-item">
+                      <span className="stat-label">🔥 Berserker / Normal</span>
+                      <span className="stat-value">{stats.advanced.classStats.berserkerWins} / {stats.advanced.classStats.normalWins}</span>
+                  </div>
+
+                  <div className="stat-group-title" style={{ fontSize: '0.7rem', color: '#94A3B8', marginTop: '0.5rem', borderBottom: '1px solid #374151' }}>AI Mode Wins</div>
+                  <div className="stat-item">
+                      <span className="stat-label">Smart / Aggressive</span>
+                      <span className="stat-value">{stats.advanced.aiStats.smartWins} / {stats.advanced.aiStats.aggressiveWins}</span>
+                  </div>
+                  <div className="stat-item">
+                      <span className="stat-label">Hunter / Defensive</span>
+                      <span className="stat-value">{stats.advanced.aiStats.hunterWins} / {stats.advanced.aiStats.defensiveWins}</span>
+                  </div>
+              </div>
+          </CollapsibleSection>
+      )}
+
       {tournament.type !== 'single' && tournament.champion && (
           <CollapsibleSection title="Tournament Stats" defaultExpanded={false} icon="🏆">
               <div className="stats-grid">

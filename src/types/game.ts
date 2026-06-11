@@ -2,6 +2,9 @@ export type EntityType = 'rock' | 'paper' | 'scissors';
 
 export type ArenaShape = 'rectangle' | 'square' | 'circle' | 'triangle' | 'hexagon';
 
+export type UnitClass = 'normal' | 'speed' | 'tank' | 'berserker';
+export type AIMode = 'random' | 'aggressive' | 'defensive' | 'hunter' | 'chaotic' | 'smart';
+
 export interface EntityData {
   id: string;
   x: number;
@@ -10,6 +13,8 @@ export interface EntityData {
   velocityY: number;
   radius: number;
   type: EntityType;
+  unitClass?: UnitClass;
+  aiMode?: AIMode;
 }
 
 export interface GameCounts {
@@ -68,6 +73,22 @@ export interface CrazyModeState {
   stats: CrazyModeStats;
 }
 
+export interface ClassStats {
+  speedWins: number;
+  tankWins: number;
+  berserkerWins: number;
+  normalWins: number;
+}
+
+export interface AIStats {
+  randomWins: number;
+  aggressiveWins: number;
+  defensiveWins: number;
+  hunterWins: number;
+  chaoticWins: number;
+  smartWins: number;
+}
+
 export interface GameStats {
   totalCollisions: number;
   totalConversions: number;
@@ -79,6 +100,10 @@ export interface GameStats {
   speedZoneVisits: number;
   slowZoneVisits: number;
   chaosZoneVisits: number;
+  advanced?: {
+      classStats: ClassStats;
+      aiStats: AIStats;
+  }
 }
 
 export type TournamentType = 'single' | 'bo3' | 'bo5' | 'bo7';
@@ -87,6 +112,8 @@ export interface MatchResult {
   round: number;
   winner: EntityType;
   duration: number;
+  classWinner?: UnitClass;
+  aiWinner?: AIMode;
 }
 
 export interface TournamentStats {
@@ -136,6 +163,8 @@ export interface MatchSummary {
     conversions: number;
     collisions: number;
     timestamp: number;
+    classWinner?: UnitClass;
+    aiWinner?: AIMode;
 }
 
 export interface ArenaPreset {
@@ -160,6 +189,10 @@ export interface GameState {
   autoPlay: boolean;
   manualObstacles: Obstacle[];
   manualPowerZones: PowerZone[];
+  unitClassesEnabled: boolean;
+  advancedAIEnabled: boolean;
+  classDistribution: 'normal' | 'mixed' | 'random';
+  aiDistribution: 'random' | 'smart' | 'mixed';
 }
 
 export interface ArenaDimensions {
