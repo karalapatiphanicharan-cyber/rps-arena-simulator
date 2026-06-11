@@ -37,6 +37,8 @@ export class GameEngine {
   private elapsedAtPause: number = 0;
 
   private onStateChange: (state: GameState) => void;
+  private lastNotifyTime: number = 0;
+  private readonly THROTTLE_MS = 200;
 
   constructor(
     ctx: CanvasRenderingContext2D,
@@ -51,23 +53,23 @@ export class GameEngine {
 
   setArenaShape(shape: ArenaShape) {
     this.shape = shape;
-    this.notifyState();
+    this.notifyState(null, true);
   }
 
   setSimulationSpeed(speed: number) {
     this.simulationSpeed = speed;
-    this.notifyState();
+    this.notifyState(null, true);
   }
 
   setCrazyMode(enabled: boolean) {
       this.crazyEventManager.setEnabled(enabled);
-      this.notifyState();
+      this.notifyState(null, true);
   }
 
   triggerCrazyEvent(name: CrazyEventName) {
       if (this.crazyEventManager.getState().enabled) {
           this.crazyEventManager.triggerEvent(name);
-          this.notifyState();
+          this.notifyState(null, true);
       }
   }
 
@@ -184,7 +186,7 @@ export class GameEngine {
       }
     });
     this.status = 'idle';
-    this.notifyState();
+    this.notifyState(null, true);
   }
 
   start() {
@@ -212,7 +214,7 @@ export class GameEngine {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
-    this.notifyState();
+    this.notifyState(null, true);
   }
 
   stop() {
@@ -232,7 +234,7 @@ export class GameEngine {
     this.effectManager.clear();
     this.elapsedAtPause = 0;
     this.draw();
-    this.notifyState();
+    this.notifyState(null, true);
   }
 
   private update() {
@@ -561,7 +563,7 @@ export class GameEngine {
       this.status = 'finished';
       soundManager.playWinner();
       if (this.animationId) cancelAnimationFrame(this.animationId);
-      this.notifyState(activeTypes[0]);
+      this.notifyState(activeTypes[0], true);
     } else {
       this.notifyState();
     }
@@ -577,11 +579,17 @@ export class GameEngine {
     );
   }
 
-  private notifyState(winner: EntityType | null = null) {
+  private notifyState(winner: EntityType | null = null, force: boolean = false) {
+    const now = Date.now();
+    if (!force && now - this.lastNotifyTime < this.THROTTLE_MS) {
+        return;
+    }
+    this.lastNotifyTime = now;
+
     const counts = this.getCounts();
     const elapsedTime = this.status === 'paused'
         ? this.elapsedAtPause
-        : (Date.now() - this.startTime) / 1000;
+        : (now - this.startTime) / 1000;
     const crazyState = this.crazyEventManager.getState();
 
     this.onStateChange({

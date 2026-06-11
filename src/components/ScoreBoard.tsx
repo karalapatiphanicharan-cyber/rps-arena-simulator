@@ -1,6 +1,7 @@
 import React from 'react';
-import type { GameCounts, PlayerNames, EntityType, GameStats, TournamentState } from '../types/game';
+import type { PlayerNames, EntityType, GameStats, TournamentState } from '../types/game';
 import { getEmoji } from '../game/Rules';
+import CollapsibleSection from './CollapsibleSection';
 
 interface ScoreBoardProps {
   playerNames: PlayerNames;
@@ -39,8 +40,7 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
 
   return (
     <div className="scoreboard-container">
-      <div className="card scoreboard">
-        <h2 className="section-title">📊 Live Scoreboard</h2>
+      <CollapsibleSection title="Live Scoreboard" defaultExpanded icon="📊">
         <div className="score-cards">
           <div className="score-card rock">
             <div className="info">
@@ -64,10 +64,9 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
             <span className="count">{counts.scissors}</span>
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
-      <div className="card stats-card" style={{ marginTop: '1rem' }}>
-        <h2 className="section-title">📈 Statistics</h2>
+      <CollapsibleSection title="Statistics" defaultExpanded={false} icon="📈">
         <div className="stats-grid">
           <div className="stat-item">
             <span className="stat-label">Total Collisions</span>
@@ -90,11 +89,10 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
             <span className="stat-value">{capitalize(arenaShape)}</span>
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {crazyMode && crazyMode.eventsTriggered > 0 && (
-          <div className="card crazy-stats-card" style={{ marginTop: '1rem', borderLeft: '4px solid #F97316' }}>
-              <h2 className="section-title">🎭 Crazy Mode Stats</h2>
+          <CollapsibleSection title="Crazy Mode Stats" defaultExpanded={false} icon="🎭">
               <div className="stats-grid">
                   <div className="stat-item">
                       <span className="stat-label">Events Triggered</span>
@@ -113,12 +111,11 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
                       <span className="stat-value">{crazyMode.speedBoostActivations} / {crazyMode.ruleReversals}</span>
                   </div>
               </div>
-          </div>
+          </CollapsibleSection>
       )}
 
       {tournament.type !== 'single' && tournament.champion && (
-          <div className="card tournament-stats-card" style={{ marginTop: '1rem', background: 'rgba(250, 204, 21, 0.1)', border: '1px solid var(--scissors-color)' }}>
-              <h2 className="section-title" style={{ color: 'var(--scissors-color)' }}>🏆 Tournament Stats</h2>
+          <CollapsibleSection title="Tournament Stats" defaultExpanded={false} icon="🏆">
               <div className="stats-grid">
                 <div className="stat-item">
                     <span className="stat-label">Avg Round Time</span>
@@ -133,7 +130,7 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
                     <span className="stat-value">{formatTime(tournament.stats.shortestRound)}</span>
                 </div>
               </div>
-          </div>
+          </CollapsibleSection>
       )}
     </div>
   );

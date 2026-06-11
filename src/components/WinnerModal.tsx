@@ -63,8 +63,6 @@ const WinnerModal: React.FC<WinnerModalProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
   return (
     <div className="modal-overlay">
       <div className="modal-content" style={{ position: 'relative', zIndex: 100 }}>
