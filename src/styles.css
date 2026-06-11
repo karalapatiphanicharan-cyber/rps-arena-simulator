@@ -122,7 +122,7 @@ canvas {
   color: #94A3B8;
 }
 
-.input-group input {
+.input-group input, .modern-select {
   width: 100%;
   background: #111827;
   border: 1px solid var(--border-color);
@@ -133,10 +133,9 @@ canvas {
   transition: var(--transition);
 }
 
-.input-group input:focus {
+.input-group input:focus, .modern-select:focus {
   outline: none;
   border-color: var(--paper-color);
-  ring: 2px solid var(--paper-color);
 }
 
 .button-group {
@@ -291,6 +290,44 @@ canvas {
   from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* Tournament Styles */
+.tournament-info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+}
+
+.round-counter {
+    font-size: 1.1rem;
+    color: #94A3B8;
+}
+
+.tournament-wins {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.win-badge {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 0.5rem;
+    font-weight: 800;
+    font-size: 1.2rem;
+    border: 2px solid transparent;
+}
+
+.win-badge.rock { background: rgba(239, 68, 68, 0.2); color: var(--rock-color); border-color: var(--rock-color); }
+.win-badge.paper { background: rgba(59, 130, 246, 0.2); color: var(--paper-color); border-color: var(--paper-color); }
+.win-badge.scissors { background: rgba(250, 204, 21, 0.2); color: var(--scissors-color); border-color: var(--scissors-color); }
+
+.progress-bar-fill.rock { background: var(--rock-color); }
+.progress-bar-fill.paper { background: var(--paper-color); }
+.progress-bar-fill.scissors { background: var(--scissors-color); }
 
 /* Responsive */
 @media (max-width: 1200px) {

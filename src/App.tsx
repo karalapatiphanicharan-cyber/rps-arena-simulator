@@ -6,14 +6,19 @@ import type {
     GameStatus,
     EntityType,
     ArenaShape,
-    GameState
+    GameState,
+    TournamentType,
+    TournamentState
 } from './types/game';
 import { GameEngine } from './game/GameEngine';
+import { TournamentManager } from './game/TournamentManager';
 import ControlPanel from './components/ControlPanel';
 import ScoreBoard from './components/ScoreBoard';
 import WinnerModal from './components/WinnerModal';
 import ProgressIndicator from './components/ProgressIndicator';
 import BattleFeed from './components/BattleFeed';
+import TournamentDashboard from './components/TournamentDashboard';
+import MatchHistory from './components/MatchHistory';
 import { soundManager } from './game/SoundManager';
 
 const ARENA_WIDTH = 1000;
@@ -22,6 +27,7 @@ const ARENA_HEIGHT = 600;
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<GameEngine | null>(null);
+  const nextRoundTimerRef = useRef<number | null>(null);
 
   const [counts, setCounts] = useState<GameCounts>({
     rock: 30,
@@ -38,6 +44,10 @@ function App() {
   const [arenaShape, setArenaShape] = useState<ArenaShape>('rectangle');
   const [simulationSpeed, setSimulationSpeed] = useState(1);
   const [isMuted, setIsMuted] = useState(true);
+  const [tournamentType, setTournamentType] = useState<TournamentType>('single');
+  const [tournamentState, setTournamentState] = useState<TournamentState>(
+    TournamentManager.getInitialState('single')
+  );
 
   useEffect(() => {
     soundManager.setEnabled(!isMuted);
@@ -56,11 +66,15 @@ function App() {
         counts: { rock: 0, paper: 0, scissors: 0 },
         elapsedTime: 0,
         arenaShape: 'rectangle'
-    }
+    },
+    tournament: tournamentState
   });
 
   const handleStateChange = useCallback((state: GameState) => {
-      setGameState(state);
+      setGameState(prevState => ({
+          ...state,
+          tournament: prevState.tournament
+      }));
   }, []);
 
   useEffect(() => {
@@ -78,6 +92,10 @@ function App() {
 
   const handleStart = () => {
     if (engineRef.current) {
+      if (nextRoundTimerRef.current) {
+          clearTimeout(nextRoundTimerRef.current);
+          nextRoundTimerRef.current = null;
+      }
       engineRef.current.setArenaShape(arenaShape);
       engineRef.current.spawn(counts);
       engineRef.current.start();
@@ -95,7 +113,18 @@ function App() {
   const handleReset = () => {
     if (engineRef.current) {
       engineRef.current.reset();
+      if (nextRoundTimerRef.current) {
+          clearTimeout(nextRoundTimerRef.current);
+          nextRoundTimerRef.current = null;
+      }
     }
+  };
+
+  const handleResetTournament = () => {
+      const newState = TournamentManager.getInitialState(tournamentType);
+      setTournamentState(newState);
+      setGameState(prev => ({ ...prev, tournament: newState }));
+      handleReset();
   };
 
   const handleRestart = () => {
@@ -118,6 +147,35 @@ function App() {
       }
   };
 
+  const handleTournamentTypeChange = (type: TournamentType) => {
+      setTournamentType(type);
+      const newState = TournamentManager.getInitialState(type);
+      setTournamentState(newState);
+      setGameState(prev => ({ ...prev, tournament: newState }));
+      handleReset();
+  };
+
+  // Detect round finish and handle tournament logic
+  useEffect(() => {
+      if (gameState.status === 'finished' && gameState.winner && !nextRoundTimerRef.current) {
+          const newState = TournamentManager.addRoundResult(
+              tournamentState,
+              gameState.winner,
+              gameState.stats.elapsedTime
+          );
+          setTournamentState(newState);
+          setGameState(prev => ({ ...prev, tournament: newState }));
+
+          if (!newState.champion) {
+              // Automatic next round after 3 seconds
+              nextRoundTimerRef.current = window.setTimeout(() => {
+                  nextRoundTimerRef.current = null;
+                  handleRestart();
+              }, 3000);
+          }
+      }
+  }, [gameState.status, gameState.winner]);
+
   const currentCounts = gameState.status === 'idle' ? counts : gameState.counts;
   const totalEntities = currentCounts.rock + currentCounts.paper + currentCounts.scissors;
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -137,14 +195,17 @@ function App() {
             status={gameState.status}
             arenaShape={arenaShape}
             simulationSpeed={simulationSpeed}
+            tournamentType={tournamentType}
             onCountsChange={setCounts}
             onNamesChange={setPlayerNames}
             onShapeChange={handleShapeChange}
             onSpeedChange={handleSpeedChange}
+            onTournamentTypeChange={handleTournamentTypeChange}
             onStart={handleStart}
             onReset={handleReset}
+            onResetTournament={handleResetTournament}
           />
-          <BattleFeed events={gameState.events} />
+          <TournamentDashboard state={tournamentState} playerNames={playerNames} />
 
           <div className="card" style={{ marginTop: '1rem' }}>
               <button
@@ -158,6 +219,21 @@ function App() {
         </aside>
 
         <section className="arena-section">
+          {tournamentState.type !== 'single' && (
+              <div className="tournament-info-bar card">
+                  <div className="round-counter">
+                      Round <strong>{tournamentState.currentRound}</strong> / {TournamentManager.getWinsNeeded(tournamentState.type) * 2 - 1} (Max)
+                  </div>
+                  <div className="tournament-wins">
+                      {Object.entries(tournamentState.wins).map(([type, wins]) => (
+                          <div key={type} className={`win-badge ${type}`}>
+                              {wins}
+                          </div>
+                      ))}
+                  </div>
+              </div>
+          )}
+
           <div className="card spectator-controls" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', justifyContent: 'center', padding: '1rem' }}>
              <button
                 onClick={handleResume}
@@ -180,7 +256,7 @@ function App() {
                 className="btn btn-reset"
                 style={{ flex: 1 }}
              >
-               🔄 Restart
+               🔄 Restart Round
              </button>
           </div>
 
@@ -207,7 +283,10 @@ function App() {
           <ScoreBoard
             playerNames={playerNames}
             stats={gameState.stats}
+            tournament={tournamentState}
           />
+          <MatchHistory history={tournamentState.history} playerNames={playerNames} />
+          <BattleFeed events={gameState.events} />
         </aside>
       </main>
 
@@ -216,7 +295,9 @@ function App() {
         counts={gameState.counts}
         playerNames={playerNames}
         stats={gameState.stats}
+        tournament={tournamentState}
         onRestart={handleRestart}
+        onResetTournament={handleResetTournament}
       />
     </div>
   );
