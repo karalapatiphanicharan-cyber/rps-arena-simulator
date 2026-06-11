@@ -1,73 +1,207 @@
-# React + TypeScript + Vite
+# 🎮 RPS Arena Royale
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Real-Time Rock Paper Scissors Battle Simulator built with React, TypeScript, and Vite.
 
-Currently, two official plugins are available:
+Watch hundreds of Rock, Paper, and Scissors entities battle inside customizable arenas with advanced AI, tournaments, crazy events, arena building, and real-time statistics.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🌐 Live Demo
 
-## React Compiler
+https://rps-arena-simulator.vercel.app
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 📸 Screenshots
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Home Screen
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+![Home Screen](./screenshots/rps home.png)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Live Battle
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+![Battle Screen](./screenshots/rpsbattle.png)
+
+---
+
+## ✨ Features
+
+### ⚔️ Real-Time Battle Simulation
+
+- Rock, Paper, and Scissors entities move independently
+- Real-time collision system
+- Dynamic conversion mechanics
+- Live winner determination
+
+### 🏆 Tournament Mode
+
+- Single Match
+- Best of 3
+- Best of 5
+- Best of 7
+
+Track rounds, champions, and match history.
+
+### 🧠 Advanced AI
+
+Multiple AI behaviors:
+
+- Random AI
+- Aggressive AI
+- Defensive AI
+- Hunter AI
+- Chaotic AI
+
+### ⚡ Unit Classes
+
+- Speed Class
+- Tank Class
+- Berserker Class
+
+Each class has unique movement and behavior patterns.
+
+### 🎲 Crazy Mode
+
+Special events include:
+
+- Speed Boost
+- Freeze Wave
+- Meteor Strike
+- Reverse Rules
+- Giant Entity
+- Chaos Storm
+- Double Population
+
+### 🏗 Arena Builder
+
+Create custom battlefields:
+
+- Walls
+- Boulders
+- Speed Zones
+- Slow Zones
+- Chaos Zones
+
+Save and load custom arenas.
+
+### 🎯 Arena Shapes
+
+- Rectangle
+- Square
+- Circle
+- Triangle
+- Hexagon
+
+Each shape changes battle dynamics.
+
+### 📊 Real-Time Analytics
+
+Track:
+
+- Live Scoreboard
+- Statistics
+- Advanced Statistics
+- Match History
+- Battle Feed
+- Domination Progress
+
+### 🎮 Ultimate Chaos Mode
+
+One-click mode that combines:
+
+- Advanced AI
+- Random Arena
+- Random Obstacles
+- Random Power Zones
+- Crazy Events
+
+for maximum chaos.
+
+---
+
+## 🛠 Tech Stack
+
+- React
+- TypeScript
+- Vite
+- CSS3
+- HTML5
+
+---
+
+## 🚀 Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/karalapatiphanicharan-cyber/rps-arena-simulator.git
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Enter project directory:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd rps-arena-simulator
 ```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run locally:
+
+```bash
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## 📦 Production Build
+
+```bash
+npm run build
+```
+
+Preview production build:
+
+```bash
+npm run preview
+```
+
+---
+
+## 🎮 How To Play
+
+1. Configure player counts.
+2. Choose arena shape.
+3. Enable optional features.
+4. Click **Start Battle**.
+5. Watch the simulation unfold.
+6. Analyze results using live statistics.
+
+---
+
+## 🌟 Highlights
+
+- Real-Time Physics Simulation
+- Tournament System
+- Arena Builder
+- Advanced AI Behaviors
+- Crazy Mode Events
+- Custom Arenas
+- Live Statistics
+- Responsive Design
+- Vercel Deployment
+
+---
+
+## 👨‍💻 Designed & Developed By
+
+# KSPC
+
+RPS Arena Royale © 2026
