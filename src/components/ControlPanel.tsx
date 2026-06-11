@@ -142,32 +142,69 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       <CollapsibleSection
-        title="Game Controls"
-        expanded={expandedStates.controls}
-        onToggle={(v) => onToggleSection('controls', v)}
-        icon="⚙️"
+        title="Player Settings"
+        expanded={expandedStates.players}
+        onToggle={(v) => onToggleSection('players', v)}
+        icon="👥"
       >
         <div className="section">
-          <div className="input-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <label style={{ margin: 0 }}>Crazy Mode</label>
-            <button
-              onClick={() => onCrazyModeToggle(!crazyMode)}
-              className="btn"
-              style={{
-                  background: crazyMode ? '#F97316' : '#374151',
-                  padding: '0.4rem 1rem',
-                  minWidth: '80px'
-              }}
-            >
-              {crazyMode ? 'ON 🎭' : 'OFF'}
-            </button>
+          <h3 className="section-subtitle" style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '0.5rem' }}>Player Names</h3>
+          <div className="input-group">
+            <input
+              type="text"
+              value={playerNames.rock}
+              onChange={(e) => handleNameChange('rock', e.target.value)}
+              disabled={isRunning}
+              placeholder="Rock name"
+            />
           </div>
-          {crazyMode && (
-              <div style={{ marginTop: '1rem', borderTop: '1px solid #374151', paddingTop: '1rem' }}>
-                  <label style={{ fontSize: '0.8rem', color: '#94A3B8', display: 'block', marginBottom: '0.5rem' }}>Crazy History</label>
-                  <CrazyEventHistory history={crazyHistory} />
-              </div>
-          )}
+          <div className="input-group">
+            <input
+              type="text"
+              value={playerNames.paper}
+              onChange={(e) => handleNameChange('paper', e.target.value)}
+              disabled={isRunning}
+              placeholder="Paper name"
+            />
+          </div>
+          <div className="input-group">
+            <input
+              type="text"
+              value={playerNames.scissors}
+              onChange={(e) => handleNameChange('scissors', e.target.value)}
+              disabled={isRunning}
+              placeholder="Scissors name"
+            />
+          </div>
+
+          <h3 className="section-subtitle" style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '0.5rem', marginTop: '1rem' }}>Entity Counts</h3>
+          <div className="input-group">
+            <input
+              type="number"
+              value={counts.rock}
+              onChange={(e) => handleCountChange('rock', e.target.value)}
+              disabled={isRunning}
+              min="0"
+            />
+          </div>
+          <div className="input-group">
+            <input
+              type="number"
+              value={counts.paper}
+              onChange={(e) => handleCountChange('paper', e.target.value)}
+              disabled={isRunning}
+              min="0"
+            />
+          </div>
+          <div className="input-group">
+            <input
+              type="number"
+              value={counts.scissors}
+              onChange={(e) => handleCountChange('scissors', e.target.value)}
+              disabled={isRunning}
+              min="0"
+            />
+          </div>
         </div>
       </CollapsibleSection>
 
@@ -246,89 +283,40 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </CollapsibleSection>
 
       <CollapsibleSection
-        title="⚔ Advanced Simulation"
-        expanded={expandedStates.adv}
-        onToggle={(v) => onToggleSection('adv', v)}
-        icon="⚔"
-      >
-          <AdvancedSimulationPanel
-            enabled={unitClassesEnabled}
-            aiEnabled={advancedAIEnabled}
-            classDist={classDist}
-            aiDist={aiDist}
-            onClassesToggle={onClassesToggle}
-            onAIToggle={onAIToggle}
-            onClassDistChange={onClassDistChange}
-            onAIDistChange={onAIDistChange}
-          />
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        title="Player Settings"
-        expanded={expandedStates.players}
-        onToggle={(v) => onToggleSection('players', v)}
-        icon="👥"
+        title="Game Controls"
+        expanded={expandedStates.controls}
+        onToggle={(v) => onToggleSection('controls', v)}
+        icon="⚙️"
       >
         <div className="section">
-          <h3 className="section-subtitle" style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '0.5rem' }}>Player Names</h3>
-          <div className="input-group">
-            <input
-              type="text"
-              value={playerNames.rock}
-              onChange={(e) => handleNameChange('rock', e.target.value)}
-              disabled={isRunning}
-              placeholder="Rock name"
-            />
+          <div className="input-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <label style={{ margin: 0 }}>Crazy Mode</label>
+            <button
+              onClick={() => onCrazyModeToggle(!crazyMode)}
+              className="btn"
+              style={{
+                  background: crazyMode ? '#F97316' : '#374151',
+                  padding: '0.4rem 1rem',
+                  minWidth: '80px'
+              }}
+            >
+              {crazyMode ? 'ON 🎭' : 'OFF'}
+            </button>
           </div>
-          <div className="input-group">
-            <input
-              type="text"
-              value={playerNames.paper}
-              onChange={(e) => handleNameChange('paper', e.target.value)}
-              disabled={isRunning}
-              placeholder="Paper name"
-            />
-          </div>
-          <div className="input-group">
-            <input
-              type="text"
-              value={playerNames.scissors}
-              onChange={(e) => handleNameChange('scissors', e.target.value)}
-              disabled={isRunning}
-              placeholder="Scissors name"
-            />
-          </div>
-
-          <h3 className="section-subtitle" style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '0.5rem', marginTop: '1rem' }}>Entity Counts</h3>
-          <div className="input-group">
-            <input
-              type="number"
-              value={counts.rock}
-              onChange={(e) => handleCountChange('rock', e.target.value)}
-              disabled={isRunning}
-              min="0"
-            />
-          </div>
-          <div className="input-group">
-            <input
-              type="number"
-              value={counts.paper}
-              onChange={(e) => handleCountChange('paper', e.target.value)}
-              disabled={isRunning}
-              min="0"
-            />
-          </div>
-          <div className="input-group">
-            <input
-              type="number"
-              value={counts.scissors}
-              onChange={(e) => handleCountChange('scissors', e.target.value)}
-              disabled={isRunning}
-              min="0"
-            />
-          </div>
+          {crazyMode && (
+              <div style={{ marginTop: '1rem', borderTop: '1px solid #374151', paddingTop: '1rem' }}>
+                  <label style={{ fontSize: '0.8rem', color: '#94A3B8', display: 'block', marginBottom: '0.5rem' }}>Crazy History</label>
+                  <CrazyEventHistory history={crazyHistory} />
+              </div>
+          )}
         </div>
       </CollapsibleSection>
+
+      {crazyMode && (
+        <CollapsibleSection title="🛠 Developer Tools" defaultExpanded={false} icon="🛠️">
+          <DevPanel onTriggerEvent={onTriggerCrazyEvent} enabled={crazyMode} />
+        </CollapsibleSection>
+      )}
 
       <CollapsibleSection
         title="🏆 Tournament"
@@ -360,6 +348,41 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 Restart Tournament
               </button>
           </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="⚔ Advanced Simulation"
+        expanded={expandedStates.adv}
+        onToggle={(v) => onToggleSection('adv', v)}
+        icon="⚔"
+      >
+          <AdvancedSimulationPanel
+            enabled={unitClassesEnabled}
+            aiEnabled={advancedAIEnabled}
+            classDist={classDist}
+            aiDist={aiDist}
+            onClassesToggle={onClassesToggle}
+            onAIToggle={onAIToggle}
+            onClassDistChange={onClassDistChange}
+            onAIDistChange={onAIDistChange}
+          />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="🏗 Arena Builder"
+        expanded={expandedStates.builder}
+        onToggle={(v) => onToggleSection('builder', v)}
+        icon="🏗️"
+      >
+        <ArenaBuilder
+            onLoadPreset={onLoadPreset}
+            onSaveArena={onSaveArena}
+            onClearArena={onClearArena}
+            currentShape={arenaShape}
+            onShapeChange={onShapeChange}
+            selectedTool={selectedTool}
+            onToolChange={onToolChange}
+        />
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -412,29 +435,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               </div>
           </div>
       </CollapsibleSection>
-
-      <CollapsibleSection
-        title="🏗 Arena Builder"
-        expanded={expandedStates.builder}
-        onToggle={(v) => onToggleSection('builder', v)}
-        icon="🏗️"
-      >
-        <ArenaBuilder
-            onLoadPreset={onLoadPreset}
-            onSaveArena={onSaveArena}
-            onClearArena={onClearArena}
-            currentShape={arenaShape}
-            onShapeChange={onShapeChange}
-            selectedTool={selectedTool}
-            onToolChange={onToolChange}
-        />
-      </CollapsibleSection>
-
-      {crazyMode && (
-        <CollapsibleSection title="🛠 Developer Tools" defaultExpanded={false} icon="🛠️">
-          <DevPanel onTriggerEvent={onTriggerCrazyEvent} enabled={crazyMode} />
-        </CollapsibleSection>
-      )}
     </div>
   );
 };

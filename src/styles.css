@@ -648,3 +648,53 @@ canvas {
   background: var(--border-color);
   border-radius: 2px;
 }
+
+/* Help Center Footer Branding */
+.help-footer {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid #374151;
+  text-align: center;
+}
+
+.footer-separator {
+  color: #374151;
+  margin-bottom: 1.5rem;
+  font-size: 0.8rem;
+  letter-spacing: -2px;
+}
+
+.footer-label {
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.1em;
+  color: #64748B;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.footer-brand {
+  color: #3B82F6;
+  font-size: 2.2rem;
+  font-weight: 900;
+  margin: 0.5rem 0;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+.footer-copyright {
+  font-size: 0.7rem;
+  color: #4B5563;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+/* Ensure Sidebars scroll without clipping */
+.control-panel-column, .scoreboard-column {
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+.help-sections-container {
+  scrollbar-width: thin;
+}
