@@ -1,4 +1,4 @@
-import type { CrazyEvent, CrazyEventName, CrazyModeState, CrazyModeStats } from '../types/game';
+import type { CrazyEvent, CrazyEventName, CrazyModeState } from '../types/game';
 
 export class CrazyEventManager {
     private state: CrazyModeState;

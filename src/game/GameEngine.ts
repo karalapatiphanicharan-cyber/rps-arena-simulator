@@ -6,7 +6,6 @@ import type {
   GameStatus,
   ArenaShape,
   BattleEvent,
-  GameStats,
   GameState,
   CrazyEventName,
   Obstacle,
@@ -32,6 +31,8 @@ export class GameEngine {
   private powerZonesEnabled: boolean = false;
   private obstacles: Obstacle[] = [];
   private powerZones: PowerZone[] = [];
+  private manualObstacles: Obstacle[] = [];
+  private manualPowerZones: PowerZone[] = [];
 
   private effectManager = new EffectManager();
   private particleManager: ParticleManager;
@@ -84,6 +85,12 @@ export class GameEngine {
       this.notifyState(null, true);
   }
 
+  setManualFeatures(obstacles: Obstacle[], zones: PowerZone[]) {
+      this.manualObstacles = obstacles;
+      this.manualPowerZones = zones;
+      this.notifyState(null, true);
+  }
+
   setCrazyMode(enabled: boolean) {
       this.crazyEventManager.setEnabled(enabled);
       this.notifyState(null, true);
@@ -94,6 +101,25 @@ export class GameEngine {
           this.crazyEventManager.triggerEvent(name);
           this.notifyState(null, true);
       }
+  }
+
+  getObjectAt(x: number, y: number): { type: 'obstacle' | 'zone', id: string } | null {
+      for (const obs of this.manualObstacles) {
+          if (obs.type === 'wall' && obs.width && obs.height) {
+              if (x > obs.x - obs.width/2 && x < obs.x + obs.width/2 &&
+                  y > obs.y - obs.height/2 && y < obs.y + obs.height/2) return { type: 'obstacle', id: obs.id };
+          } else if (obs.radius) {
+              const dx = x - obs.x;
+              const dy = y - obs.y;
+              if (Math.sqrt(dx*dx + dy*dy) < obs.radius) return { type: 'obstacle', id: obs.id };
+          }
+      }
+      for (const zone of this.manualPowerZones) {
+          const dx = x - zone.x;
+          const dy = y - zone.y;
+          if (Math.sqrt(dx*dx + dy*dy) < zone.radius) return { type: 'zone', id: zone.id };
+      }
+      return null;
   }
 
   private isInside(x: number, y: number, radius: number): boolean {
@@ -158,7 +184,7 @@ export class GameEngine {
     return r * r - r * q2y - 2 * (r / 2) * q2x / Math.sqrt(3) >= 0;
   }
 
-  spawn(counts: GameCounts) {
+  spawn(counts: GameCounts, skipFeatureGeneration: boolean = false) {
     this.entities = [];
     this.totalCollisions = 0;
     this.totalConversions = 0;
@@ -167,7 +193,9 @@ export class GameEngine {
     this.slowZoneVisits = 0;
     this.chaosZoneVisits = 0;
     this.events = [];
-    this.generateArenaFeatures();
+    if (!skipFeatureGeneration) {
+        this.generateArenaFeatures();
+    }
     this.effectManager.clear();
     this.crazyEventManager.reset(this.crazyEventManager.getState().enabled);
     this.startTime = Date.now();
@@ -193,6 +221,25 @@ export class GameEngine {
                 break;
               }
             }
+          }
+          if (!colliding) {
+              const allObs = [...this.obstacles, ...this.manualObstacles];
+              for (const obs of allObs) {
+                  if (obs.type === 'wall' && obs.width && obs.height) {
+                      if (x + radius > obs.x - obs.width/2 - 5 && x - radius < obs.x + obs.width/2 + 5 &&
+                          y + radius > obs.y - obs.height/2 - 5 && y - radius < obs.y + obs.height/2 + 5) {
+                          colliding = true;
+                          break;
+                      }
+                  } else if (obs.radius) {
+                      const dx = x - obs.x;
+                      const dy = y - obs.y;
+                      if (Math.sqrt(dx*dx + dy*dy) < radius + obs.radius + 5) {
+                          colliding = true;
+                          break;
+                      }
+                  }
+              }
           }
           attempts++;
         } while (colliding && attempts < 200);
@@ -310,7 +357,8 @@ export class GameEngine {
 
   private isPositionClear(x: number, y: number, radius: number): boolean {
       if (!this.isInside(x, y, radius)) return false;
-      for (const obs of this.obstacles) {
+      const allObs = [...this.obstacles, ...this.manualObstacles];
+      for (const obs of allObs) {
           const dx = x - obs.x;
           const dy = y - obs.y;
           if (Math.sqrt(dx * dx + dy * dy) < radius + (obs.radius || 40)) return false;
@@ -428,7 +476,8 @@ export class GameEngine {
     this.effectManager.update();
 
     // Update moving obstacles
-    this.obstacles.forEach(obs => {
+    const allObs = [...this.obstacles, ...this.manualObstacles];
+    allObs.forEach(obs => {
         if (obs.type === 'moving' && obs.velocityX !== undefined && obs.velocityY !== undefined) {
             obs.x += obs.velocityX * speedMult;
             obs.y += obs.velocityY * speedMult;
@@ -445,7 +494,8 @@ export class GameEngine {
 
         // Power Zone logic
         let entitySpeedMult = speedMult;
-        this.powerZones.forEach(zone => {
+        const allZones = [...this.powerZones, ...this.manualPowerZones];
+        allZones.forEach(zone => {
             const dx = entity.x - zone.x;
             const dy = entity.y - zone.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
@@ -483,7 +533,7 @@ export class GameEngine {
         }
 
         // Obstacle collisions
-        this.obstacles.forEach(obs => {
+        allObs.forEach(obs => {
             if (obs.type === 'wall' && obs.width !== undefined && obs.height !== undefined) {
                 if (entity.x + entity.radius > obs.x - obs.width/2 &&
                     entity.x - entity.radius < obs.x + obs.width/2 &&
@@ -709,7 +759,8 @@ export class GameEngine {
     this.ctx.restore();
 
     // Draw Power Zones
-    this.powerZones.forEach(zone => {
+    const allZones = [...this.powerZones, ...this.manualPowerZones];
+    allZones.forEach(zone => {
         this.ctx.save();
         this.ctx.beginPath();
         this.ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
@@ -726,7 +777,8 @@ export class GameEngine {
     });
 
     // Draw Obstacles
-    this.obstacles.forEach(obs => {
+    const allObs = [...this.obstacles, ...this.manualObstacles];
+    allObs.forEach(obs => {
         this.ctx.save();
         this.ctx.fillStyle = '#4B5563';
         this.ctx.strokeStyle = '#94A3B8';
@@ -807,7 +859,10 @@ export class GameEngine {
       tournament: {} as any, // Placeholder, App.tsx handles this
       crazyMode: crazyState,
       obstacles: this.obstacleDensity,
-      powerZones: this.powerZonesEnabled
+      powerZones: this.powerZonesEnabled,
+      autoPlay: false, // Managed by App.tsx
+      manualObstacles: this.manualObstacles,
+      manualPowerZones: this.manualPowerZones
     });
   }
 }

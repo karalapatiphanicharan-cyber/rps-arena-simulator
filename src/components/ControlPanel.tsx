@@ -23,6 +23,10 @@ interface ControlPanelProps {
   onObstaclesChange: (density: ObstacleDensity) => void;
   powerZones: boolean;
   onPowerZonesToggle: (enabled: boolean) => void;
+  onRandomBattle: () => void;
+  onRandomTournament: () => void;
+  autoPlay: boolean;
+  onAutoPlayToggle: (enabled: boolean) => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -46,6 +50,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onObstaclesChange,
   powerZones,
   onPowerZonesToggle,
+  onRandomBattle,
+  onRandomTournament,
+  autoPlay,
+  onAutoPlayToggle,
 }) => {
   const handleCountChange = (type: keyof GameCounts, value: string) => {
     const numValue = parseInt(value) || 0;
@@ -74,6 +82,38 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </button>
             <button onClick={onResetTournament} className="btn" style={{ background: '#4B5563', color: 'white' }}>
               Restart Tournament
+            </button>
+            <button
+                onClick={onRandomBattle}
+                className="btn"
+                style={{ background: '#8B5CF6', color: 'white' }}
+                disabled={status === 'running' || status === 'paused'}
+            >
+                🎲 Random Battle
+            </button>
+            <button
+                onClick={onRandomTournament}
+                className="btn"
+                style={{ background: '#EC4899', color: 'white' }}
+                disabled={status === 'running' || status === 'paused'}
+            >
+                🎰 Random Tournament
+            </button>
+          </div>
+
+          <div className="input-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+            <label style={{ margin: 0, fontSize: '0.8rem' }}>▶ Auto Play</label>
+            <button
+              onClick={() => onAutoPlayToggle(!autoPlay)}
+              className="btn"
+              style={{
+                  background: autoPlay ? '#10B981' : '#374151',
+                  padding: '0.25rem 0.75rem',
+                  minWidth: '60px',
+                  fontSize: '0.7rem'
+              }}
+            >
+              {autoPlay ? 'ON' : 'OFF'}
             </button>
           </div>
       </div>

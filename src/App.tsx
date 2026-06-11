@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import './styles.css';
 import type {
     GameCounts,
@@ -8,7 +8,11 @@ import type {
     TournamentType,
     TournamentState,
     CrazyEventName,
-    ObstacleDensity
+    ObstacleDensity,
+    MatchSummary,
+    Obstacle,
+    PowerZone,
+    ArenaPreset
 } from './types/game';
 import { GameEngine } from './game/GameEngine';
 import { TournamentManager } from './game/TournamentManager';
@@ -23,6 +27,7 @@ import CrazyEventBanner from './components/CrazyEventBanner';
 import CrazyEventHistory from './components/CrazyEventHistory';
 import DevPanel from './components/DevPanel';
 import CollapsibleSection from './components/CollapsibleSection';
+import ArenaBuilder from './components/ArenaBuilder';
 import { soundManager } from './game/SoundManager';
 
 const ARENA_WIDTH = 1000;
@@ -50,7 +55,7 @@ function App() {
 
   const [arenaShape, setArenaShape] = useState<ArenaShape>('rectangle');
   const [simulationSpeed, setSimulationSpeed] = useState(1);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [tournamentType, setTournamentType] = useState<TournamentType>('single');
   const [tournamentState, setTournamentState] = useState<TournamentState>(
     TournamentManager.getInitialState('single')
@@ -58,6 +63,15 @@ function App() {
   const [crazyMode, setCrazyMode] = useState(false);
   const [obstacles, setObstacles] = useState<ObstacleDensity>('off');
   const [powerZones, setPowerZones] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(false);
+  const [matchHistory, setMatchHistory] = useState<MatchSummary[]>(() => {
+      const saved = localStorage.getItem('rps_match_history');
+      return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+      localStorage.setItem('rps_match_history', JSON.stringify(matchHistory.slice(0, 20)));
+  }, [matchHistory]);
 
   useEffect(() => {
     soundManager.setEnabled(!isMuted);
@@ -84,6 +98,9 @@ function App() {
     tournament: tournamentState,
     obstacles: 'off',
     powerZones: false,
+    autoPlay: false,
+    manualObstacles: [],
+    manualPowerZones: [],
     crazyMode: {
         enabled: false,
         activeEvent: null,
@@ -101,31 +118,114 @@ function App() {
   const handleStateChange = useCallback((state: GameState) => {
       setGameState(prevState => ({
           ...state,
-          tournament: prevState.tournament
+          tournament: prevState.tournament,
+          autoPlay: autoPlay // Maintain autoPlay state
       }));
-  }, []);
+  }, [autoPlay]);
 
-  useEffect(() => {
-    if (canvasRef.current && !engineRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      if (ctx) {
-        engineRef.current = new GameEngine(
-          ctx,
-          { width: ARENA_WIDTH, height: ARENA_HEIGHT },
-          handleStateChange
-        );
-      }
+  const engine = useMemo(() => {
+    if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d');
+        if (ctx) {
+            return new GameEngine(
+                ctx,
+                { width: ARENA_WIDTH, height: ARENA_HEIGHT },
+                handleStateChange
+            );
+        }
     }
+    return null;
   }, [handleStateChange]);
 
-  const handleStart = () => {
+  useEffect(() => {
+    engineRef.current = engine;
+  }, [engine]);
+
+  useEffect(() => {
+      const canvas = canvasRef.current;
+      if (!canvas || !engineRef.current) return;
+
+      const handleContextMenu = (e: MouseEvent) => {
+          e.preventDefault();
+          if (!engineRef.current) return;
+          const rect = canvas.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const obj = engineRef.current.getObjectAt(x, y);
+          if (obj) {
+              if (obj.type === 'obstacle') {
+                  engineRef.current.setManualFeatures(
+                      gameState.manualObstacles.filter(o => o.id !== obj.id),
+                      gameState.manualPowerZones
+                  );
+              } else {
+                  engineRef.current.setManualFeatures(
+                      gameState.manualObstacles,
+                      gameState.manualPowerZones.filter(z => z.id !== obj.id)
+                  );
+              }
+          }
+      };
+
+      const handleClick = (e: MouseEvent) => {
+          if (e.button !== 0) return; // Only left click
+          if (!engineRef.current || (gameState.status !== 'idle' && gameState.status !== 'finished')) return;
+
+          const rect = canvas.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+
+          if (engineRef.current.getObjectAt(x, y)) return;
+
+          // Add random object
+          const type = Math.random() > 0.5 ? 'obstacle' : 'zone';
+          if (type === 'obstacle') {
+              const obsType = (['wall', 'boulder', 'moving'] as const)[Math.floor(Math.random() * 3)];
+              const newObs: Obstacle = {
+                  id: `manual-obs-${Date.now()}`,
+                  type: obsType,
+                  x, y,
+                  width: obsType === 'wall' ? 40 + Math.random() * 60 : undefined,
+                  height: obsType === 'wall' ? 20 + Math.random() * 30 : undefined,
+                  radius: obsType !== 'wall' ? 20 + Math.random() * 20 : undefined,
+                  velocityX: obsType === 'moving' ? (Math.random() - 0.5) * 2 : undefined,
+                  velocityY: obsType === 'moving' ? (Math.random() - 0.5) * 2 : undefined
+              };
+              engineRef.current.setManualFeatures(
+                  [...gameState.manualObstacles, newObs],
+                  gameState.manualPowerZones
+              );
+          } else {
+              const zoneType = (['speed', 'slow', 'chaos'] as const)[Math.floor(Math.random() * 3)];
+              const newZone: PowerZone = {
+                  id: `manual-zone-${Date.now()}`,
+                  type: zoneType,
+                  x, y,
+                  radius: 40 + Math.random() * 40
+              };
+              engineRef.current.setManualFeatures(
+                  gameState.manualObstacles,
+                  [...gameState.manualPowerZones, newZone]
+              );
+          }
+      };
+
+      canvas.addEventListener('contextmenu', handleContextMenu);
+      canvas.addEventListener('mousedown', handleClick);
+      return () => {
+          canvas.removeEventListener('contextmenu', handleContextMenu);
+          canvas.removeEventListener('mousedown', handleClick);
+      };
+  }, [gameState.status, gameState.manualObstacles, gameState.manualPowerZones]);
+
+  const handleStart = (skipFeatureGeneration: boolean = false) => {
     if (engineRef.current) {
       if (nextRoundTimerRef.current) {
           clearTimeout(nextRoundTimerRef.current);
           nextRoundTimerRef.current = null;
       }
       engineRef.current.setArenaShape(arenaShape);
-      engineRef.current.spawn(counts);
+      engineRef.current.spawn(counts, skipFeatureGeneration);
       engineRef.current.start();
     }
   };
@@ -155,9 +255,9 @@ function App() {
       handleReset();
   };
 
-  const handleRestart = () => {
+  const handleRestart = (skipFeatureGeneration: boolean = false) => {
     handleReset();
-    handleStart();
+    handleStart(skipFeatureGeneration);
   };
 
   const handleShapeChange = (shape: ArenaShape) => {
@@ -202,6 +302,36 @@ function App() {
       }
   };
 
+  const handleLoadPreset = (preset: ArenaPreset) => {
+      setArenaShape(preset.shape);
+      if (engineRef.current) {
+          engineRef.current.setArenaShape(preset.shape);
+          engineRef.current.setManualFeatures(preset.obstacles, preset.powerZones);
+          engineRef.current.reset();
+      }
+  };
+
+  const handleSaveArena = (name: string) => {
+      if (engineRef.current) {
+          const state = gameState;
+          const customArena: ArenaPreset = {
+              name,
+              shape: arenaShape,
+              obstacles: state.manualObstacles,
+              powerZones: state.manualPowerZones
+          };
+          const saved = localStorage.getItem('rps_custom_arenas');
+          const customArenas = saved ? JSON.parse(saved) : [];
+          localStorage.setItem('rps_custom_arenas', JSON.stringify([...customArenas, customArena]));
+      }
+  };
+
+  const handleClearArena = () => {
+      if (engineRef.current) {
+          engineRef.current.setManualFeatures([], []);
+      }
+  };
+
   const handleTournamentTypeChange = (type: TournamentType) => {
       setTournamentType(type);
       const newState = TournamentManager.getInitialState(type);
@@ -210,9 +340,67 @@ function App() {
       handleReset();
   };
 
+  const handleRandomBattle = useCallback(() => {
+      const shapes: ArenaShape[] = ['rectangle', 'square', 'circle', 'triangle', 'hexagon'];
+      const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
+      const randomCounts = {
+          rock: Math.floor(Math.random() * 96) + 5,
+          paper: Math.floor(Math.random() * 96) + 5,
+          scissors: Math.floor(Math.random() * 96) + 5
+      };
+      const densities: ObstacleDensity[] = ['off', 'low', 'medium', 'high'];
+      const randomDensity = densities[Math.floor(Math.random() * densities.length)];
+      const randomPowerZones = Math.random() > 0.5;
+      const randomCrazy = Math.random() > 0.7;
+      const speeds = [0.5, 1, 2, 4];
+      const randomSpeed = speeds[Math.floor(Math.random() * speeds.length)];
+
+      setArenaShape(randomShape);
+      setCounts(randomCounts);
+      setObstacles(randomDensity);
+      setPowerZones(randomPowerZones);
+      setCrazyMode(randomCrazy);
+      setSimulationSpeed(randomSpeed);
+      setTournamentType('single');
+      setTournamentState(TournamentManager.getInitialState('single'));
+
+      if (engineRef.current) {
+          engineRef.current.setArenaShape(randomShape);
+          engineRef.current.setObstacles(randomDensity);
+          engineRef.current.setPowerZones(randomPowerZones);
+          engineRef.current.setCrazyMode(randomCrazy);
+          engineRef.current.setSimulationSpeed(randomSpeed);
+          engineRef.current.spawn(randomCounts);
+          engineRef.current.start();
+      }
+  }, []);
+
+  const handleRandomTournament = useCallback(() => {
+      const types: TournamentType[] = ['bo3', 'bo5', 'bo7'];
+      const randomType = types[Math.floor(Math.random() * types.length)];
+
+      handleRandomBattle(); // Generate random arena setup
+      setTournamentType(randomType);
+      const newState = TournamentManager.getInitialState(randomType);
+      setTournamentState(newState);
+      setGameState(prev => ({ ...prev, tournament: newState }));
+  }, [handleRandomBattle]);
+
   // Detect round finish and handle tournament logic
   useEffect(() => {
       if (gameState.status === 'finished' && gameState.winner && !nextRoundTimerRef.current) {
+          // Add to match history
+          const summary: MatchSummary = {
+              id: `match-${Date.now()}`,
+              arenaShape: gameState.arenaShape,
+              winner: gameState.winner,
+              duration: gameState.stats.elapsedTime,
+              conversions: gameState.stats.totalConversions,
+              collisions: gameState.stats.totalCollisions,
+              timestamp: Date.now()
+          };
+          setMatchHistory(prev => [summary, ...prev].slice(0, 20));
+
           const newState = TournamentManager.addRoundResult(
               tournamentState,
               gameState.winner,
@@ -225,11 +413,25 @@ function App() {
               // Automatic next round after 3 seconds
               nextRoundTimerRef.current = window.setTimeout(() => {
                   nextRoundTimerRef.current = null;
-                  handleRestart();
+                  // If we are using manual features, keep them
+                  const hasManual = gameState.manualObstacles.length > 0 || gameState.manualPowerZones.length > 0;
+                  handleRestart(hasManual);
+              }, 3000);
+          } else if (autoPlay) {
+              // Tournament over, start new random tournament if autoPlay is on
+              nextRoundTimerRef.current = window.setTimeout(() => {
+                  nextRoundTimerRef.current = null;
+                  handleRandomTournament();
               }, 3000);
           }
+      } else if (gameState.status === 'finished' && gameState.winner && gameState.tournament.type === 'single' && autoPlay && !nextRoundTimerRef.current) {
+          // Single match over, start new random battle if autoPlay is on
+          nextRoundTimerRef.current = window.setTimeout(() => {
+              nextRoundTimerRef.current = null;
+              handleRandomBattle();
+          }, 3000);
       }
-  }, [gameState.status, gameState.winner]);
+  }, [gameState.status, gameState.winner, gameState.tournament.type, tournamentState, autoPlay, handleRandomBattle, handleRandomTournament]);
 
   const currentCounts = gameState.status === 'idle' ? counts : gameState.counts;
   const totalEntities = currentCounts.rock + currentCounts.paper + currentCounts.scissors;
@@ -274,6 +476,10 @@ function App() {
             onObstaclesChange={handleObstaclesChange}
             powerZones={powerZones}
             onPowerZonesToggle={handlePowerZonesToggle}
+            onRandomBattle={handleRandomBattle}
+            onRandomTournament={handleRandomTournament}
+            autoPlay={autoPlay}
+            onAutoPlayToggle={setAutoPlay}
           />
 
           <CollapsibleSection title="Tournament Info" defaultExpanded={tournamentState.type !== 'single'} icon="🏁">
@@ -282,6 +488,16 @@ function App() {
 
           <CollapsibleSection title="Crazy History" defaultExpanded={false} icon="📜">
             <CrazyEventHistory history={gameState.crazyMode.history} />
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Arena Builder" defaultExpanded={false} icon="🏗️">
+            <ArenaBuilder
+                onLoadPreset={handleLoadPreset}
+                onSaveArena={handleSaveArena}
+                onClearArena={handleClearArena}
+                currentShape={arenaShape}
+                onShapeChange={handleShapeChange}
+            />
           </CollapsibleSection>
 
           {crazyMode && (
@@ -335,7 +551,7 @@ function App() {
                ⏸ Pause
              </button>
              <button
-                onClick={handleRestart}
+                onClick={() => handleRestart()}
                 className="btn btn-reset"
              >
                🔄 Restart Round
@@ -375,7 +591,11 @@ function App() {
           />
 
           <CollapsibleSection title="Match History" defaultExpanded={false} icon="📋">
-            <MatchHistory history={tournamentState.history} playerNames={playerNames} />
+            <MatchHistory
+                history={tournamentState.history}
+                playerNames={playerNames}
+                summaryHistory={matchHistory}
+            />
           </CollapsibleSection>
 
           <CollapsibleSection title="Battle Feed" defaultExpanded={false} icon="⚡">
