@@ -43,6 +43,35 @@ export class EffectManager {
         ctx.beginPath();
         ctx.arc(effect.x, effect.y, 15 * (1 + progress), 0, Math.PI * 2);
         ctx.fill();
+      } else if (effect.type === 'meteor_warning') {
+        const radius = effect.radius || 100;
+        ctx.strokeStyle = '#EF4444';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 5]);
+        ctx.beginPath();
+        ctx.arc(effect.x, effect.y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.globalAlpha = alpha * 0.3;
+        ctx.fillStyle = '#EF4444';
+        ctx.fill();
+      } else if (effect.type === 'explosion') {
+        const radius = (effect.radius || 100) * (0.5 + progress * 0.5);
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = '#F97316';
+        ctx.fillStyle = progress < 0.5 ? '#FFFFFF' : '#EF4444';
+        ctx.beginPath();
+        ctx.arc(effect.x, effect.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Extra sparks
+        for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI * 2) / 8;
+            const dist = radius * 1.2;
+            ctx.beginPath();
+            ctx.arc(effect.x + Math.cos(angle) * dist, effect.y + Math.sin(angle) * dist, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
       }
 
       ctx.restore();

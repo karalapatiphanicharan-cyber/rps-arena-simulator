@@ -9,7 +9,7 @@ interface ScoreBoardProps {
 }
 
 const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament }) => {
-  const { counts, elapsedTime, arenaShape, totalCollisions, totalConversions } = stats;
+  const { counts, elapsedTime, arenaShape, totalCollisions, totalConversions, crazyMode } = stats;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -91,6 +91,30 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
           </div>
         </div>
       </div>
+
+      {crazyMode && crazyMode.eventsTriggered > 0 && (
+          <div className="card crazy-stats-card" style={{ marginTop: '1rem', borderLeft: '4px solid #F97316' }}>
+              <h2 className="section-title">🎭 Crazy Mode Stats</h2>
+              <div className="stats-grid">
+                  <div className="stat-item">
+                      <span className="stat-label">Events Triggered</span>
+                      <span className="stat-value">{crazyMode.eventsTriggered}</span>
+                  </div>
+                  <div className="stat-item">
+                      <span className="stat-label">Meteor Eliminations</span>
+                      <span className="stat-value">{crazyMode.meteorEliminations}</span>
+                  </div>
+                  <div className="stat-item">
+                      <span className="stat-label">Frozen Count</span>
+                      <span className="stat-value">{crazyMode.freezeCount}</span>
+                  </div>
+                  <div className="stat-item">
+                      <span className="stat-label">Boosts / Reversals</span>
+                      <span className="stat-value">{crazyMode.speedBoostActivations} / {crazyMode.ruleReversals}</span>
+                  </div>
+              </div>
+          </div>
+      )}
 
       {tournament.type !== 'single' && tournament.champion && (
           <div className="card tournament-stats-card" style={{ marginTop: '1rem', background: 'rgba(250, 204, 21, 0.1)', border: '1px solid var(--scissors-color)' }}>

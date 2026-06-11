@@ -10,6 +10,10 @@ export class Entity implements EntityData {
   radius: number;
   type: EntityType;
 
+  frozen: boolean = false;
+  isGiant: boolean = false;
+  private baseRadius: number;
+
   private readonly minSpeed = 1.5;
   private readonly maxSpeed = 3.5;
   private rotation = 0;
@@ -23,11 +27,20 @@ export class Entity implements EntityData {
     this.velocityX = data.velocityX;
     this.velocityY = data.velocityY;
     this.radius = data.radius;
+    this.baseRadius = data.radius;
     this.type = data.type;
     this.constrainSpeed();
   }
 
   update(arena: ArenaDimensions, speedMultiplier: number = 1) {
+    if (this.frozen) return;
+
+    // Giant logic
+    const targetRadius = this.isGiant ? this.baseRadius * 3 : this.baseRadius;
+    if (this.radius !== targetRadius) {
+        this.radius += (targetRadius - this.radius) * 0.1;
+    }
+
     // Move
     this.x += this.velocityX * speedMultiplier;
     this.y += this.velocityY * speedMultiplier;
@@ -37,7 +50,6 @@ export class Entity implements EntityData {
 
     // Slight rotation based on movement
     const targetRotation = Math.atan2(this.velocityY, this.velocityX);
-    // Smoothly interpolate rotation (subtle)
     this.rotation = targetRotation * 0.2;
   }
 
@@ -69,6 +81,16 @@ export class Entity implements EntityData {
     ctx.save();
     ctx.translate(this.x, this.y + floatY);
     ctx.rotate(this.rotation);
+
+    if (this.frozen) {
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#3B82F6';
+    }
+
+    if (this.isGiant) {
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#F97316';
+    }
 
     ctx.font = `${this.radius * 2}px serif`;
     ctx.textAlign = 'center';
