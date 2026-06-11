@@ -1,4 +1,4 @@
-import type { EntityData, EntityType, ArenaDimensions } from '../types/game';
+import type { EntityData, EntityType, ArenaDimensions, UnitClass, AIMode } from '../types/game';
 import { getEmoji } from './Rules';
 
 export class Entity implements EntityData {
@@ -9,13 +9,15 @@ export class Entity implements EntityData {
   velocityY: number;
   radius: number;
   type: EntityType;
+  unitClass: UnitClass;
+  aiMode: AIMode;
 
   frozen: boolean = false;
   isGiant: boolean = false;
   private baseRadius: number;
 
-  private readonly minSpeed = 3.0;
-  private readonly maxSpeed = 7.0;
+  private minSpeed = 3.0;
+  private maxSpeed = 7.0;
   private rotation = 0;
   private floatOffset = 0;
   private floatSpeed = Math.random() * 0.05 + 0.02;
@@ -26,14 +28,34 @@ export class Entity implements EntityData {
     this.y = data.y;
     this.velocityX = data.velocityX;
     this.velocityY = data.velocityY;
-    this.radius = data.radius;
-    this.baseRadius = data.radius;
     this.type = data.type;
+    this.unitClass = data.unitClass || 'normal';
+    this.aiMode = data.aiMode || 'random';
+
+    // Class properties
+    this.radius = data.radius;
+    if (this.unitClass === 'speed') {
+        this.radius *= 0.8;
+        this.minSpeed *= 1.5;
+        this.maxSpeed *= 1.5;
+    } else if (this.unitClass === 'tank') {
+        this.radius *= 1.4;
+        this.minSpeed *= 0.7;
+        this.maxSpeed *= 0.7;
+    } else if (this.unitClass === 'berserker') {
+        this.minSpeed *= 1.2;
+        this.maxSpeed *= 1.3;
+    }
+
+    this.baseRadius = this.radius;
     this.constrainSpeed();
   }
 
-  update(_arena: ArenaDimensions, speedMultiplier: number = 1) {
+  update(_arena: ArenaDimensions, entities: Entity[], speedMultiplier: number = 1) {
     if (this.frozen) return;
+
+    // AI Logic
+    this.applyAI(entities);
 
     // Giant logic
     const targetRadius = this.isGiant ? this.baseRadius * 3 : this.baseRadius;
@@ -51,6 +73,82 @@ export class Entity implements EntityData {
     // Slight rotation based on movement
     const targetRotation = Math.atan2(this.velocityY, this.velocityX);
     this.rotation = targetRotation * 0.2;
+
+    this.constrainSpeed();
+  }
+
+  private applyAI(entities: Entity[]) {
+    if (this.aiMode === 'random') return;
+
+    const preyType = this.getPreyType();
+    const predatorType = this.getPredatorType();
+
+    let steerX = 0;
+    let steerY = 0;
+
+    if (this.aiMode === 'aggressive' || this.aiMode === 'hunter' || this.aiMode === 'smart' || this.unitClass === 'berserker') {
+        const target = this.findNearest(entities, preyType);
+        if (target) {
+            const dx = target.x - this.x;
+            const dy = target.y - this.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            steerX += (dx / dist) * 0.2;
+            steerY += (dy / dist) * 0.2;
+        }
+    }
+
+    if (this.aiMode === 'defensive' || this.aiMode === 'smart') {
+        const threat = this.findNearest(entities, predatorType);
+        if (threat) {
+            const dx = this.x - threat.x;
+            const dy = this.y - threat.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 150) {
+                steerX += (dx / dist) * 0.3;
+                steerY += (dy / dist) * 0.3;
+            }
+        }
+    }
+
+    if (this.aiMode === 'chaotic') {
+        if (Math.random() < 0.05) {
+            const angle = Math.random() * Math.PI * 2;
+            steerX += Math.cos(angle) * 0.5;
+            steerY += Math.sin(angle) * 0.5;
+        }
+    }
+
+    this.velocityX += steerX;
+    this.velocityY += steerY;
+  }
+
+  private findNearest(entities: Entity[], type: EntityType): Entity | null {
+    let nearest: Entity | null = null;
+    let minDist = Infinity;
+
+    for (const e of entities) {
+        if (e === this || e.type !== type) continue;
+        const dx = e.x - this.x;
+        const dy = e.y - this.y;
+        const dist = dx*dx + dy*dy;
+        if (dist < minDist) {
+            minDist = dist;
+            nearest = e;
+        }
+    }
+    return nearest;
+  }
+
+  private getPreyType(): EntityType {
+      if (this.type === 'rock') return 'scissors';
+      if (this.type === 'paper') return 'rock';
+      return 'paper';
+  }
+
+  private getPredatorType(): EntityType {
+      if (this.type === 'rock') return 'paper';
+      if (this.type === 'paper') return 'scissors';
+      return 'rock';
   }
 
   constrainSpeed() {
@@ -92,10 +190,33 @@ export class Entity implements EntityData {
         ctx.shadowColor = '#F97316';
     }
 
+    // Class visuals
+    if (this.unitClass === 'speed') {
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = '#FACC15';
+    } else if (this.unitClass === 'tank') {
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = '#4B5563';
+    } else if (this.unitClass === 'berserker') {
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#EF4444';
+    }
+
     ctx.font = `${this.radius * 2}px serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(emoji, 0, 0);
+
+    // Class icon
+    let classIcon = '';
+    if (this.unitClass === 'speed') classIcon = '⚡';
+    else if (this.unitClass === 'tank') classIcon = '🛡';
+    else if (this.unitClass === 'berserker') classIcon = '🔥';
+
+    if (classIcon) {
+        ctx.font = `${this.radius}px serif`;
+        ctx.fillText(classIcon, this.radius, -this.radius);
+    }
 
     ctx.restore();
   }

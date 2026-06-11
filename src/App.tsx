@@ -25,6 +25,7 @@ import ProgressIndicator from './components/ProgressIndicator';
 import BattleFeed from './components/BattleFeed';
 import MatchHistory from './components/MatchHistory';
 import CrazyEventBanner from './components/CrazyEventBanner';
+import HelpCenter from './components/HelpCenter';
 import { soundManager } from './game/SoundManager';
 
 const ARENA_WIDTH = 1000;
@@ -62,9 +63,20 @@ function App() {
   const [obstacles, setObstacles] = useState<ObstacleDensity>('off');
   const [powerZones, setPowerZones] = useState(false);
   const [autoPlay, setAutoPlay] = useState(false);
+  const [unitClasses, setUnitClasses] = useState(false);
+  const [advancedAI, setAdvancedAI] = useState(false);
+  const [classDist, setClassDist] = useState<'normal' | 'mixed' | 'random'>('normal');
+  const [aiDist, setAIDist] = useState<'random' | 'smart' | 'mixed'>('random');
   const [matchHistory, setMatchHistory] = useState<MatchSummary[]>(() => {
       const saved = localStorage.getItem('rps_match_history');
       return saved ? JSON.parse(saved) : [];
+  });
+  const [advancedStats, setAdvancedStats] = useState<{classStats: any, aiStats: any}>(() => {
+      const saved = localStorage.getItem('rps_advanced_stats');
+      return saved ? JSON.parse(saved) : {
+          classStats: { speedWins: 0, tankWins: 0, berserkerWins: 0, normalWins: 0 },
+          aiStats: { randomWins: 0, aggressiveWins: 0, defensiveWins: 0, hunterWins: 0, chaoticWins: 0, smartWins: 0 }
+      };
   });
   const [selectedTool, setSelectedTool] = useState<BuilderTool>('wall');
 
@@ -104,7 +116,11 @@ function App() {
             speedBoostActivations: 0,
             ruleReversals: 0
         }
-    }
+    },
+    unitClassesEnabled: false,
+    advancedAIEnabled: false,
+    classDistribution: 'normal',
+    aiDistribution: 'random'
   });
 
   // Refs for state that engine needs access to via callback
@@ -144,6 +160,10 @@ function App() {
   useEffect(() => {
       localStorage.setItem('rps_match_history', JSON.stringify(matchHistory.slice(0, 20)));
   }, [matchHistory]);
+
+  useEffect(() => {
+      localStorage.setItem('rps_advanced_stats', JSON.stringify(advancedStats));
+  }, [advancedStats]);
 
   useEffect(() => {
     soundManager.setEnabled(!isMuted);
@@ -294,6 +314,34 @@ function App() {
       }
   };
 
+  const updateAdvancedSim = useCallback((
+      u: boolean, a: boolean, c: 'normal' | 'mixed' | 'random', ai: 'random' | 'smart' | 'mixed'
+  ) => {
+      if (engineRef.current) {
+          engineRef.current.setAdvancedSimulation(u, a, c, ai);
+      }
+  }, []);
+
+  const handleClassesToggle = (val: boolean) => {
+      setUnitClasses(val);
+      updateAdvancedSim(val, advancedAI, classDist, aiDist);
+  };
+
+  const handleAIToggle = (val: boolean) => {
+      setAdvancedAI(val);
+      updateAdvancedSim(unitClasses, val, classDist, aiDist);
+  };
+
+  const handleClassDistChange = (val: any) => {
+      setClassDist(val);
+      updateAdvancedSim(unitClasses, advancedAI, val, aiDist);
+  };
+
+  const handleAIDistChange = (val: any) => {
+      setAIDist(val);
+      updateAdvancedSim(unitClasses, advancedAI, classDist, val);
+  };
+
   const handleObstaclesChange = (density: ObstacleDensity) => {
       setObstacles(density);
       if (engineRef.current) {
@@ -398,10 +446,31 @@ function App() {
       setGameState(prev => ({ ...prev, tournament: newState }));
   }, [handleRandomBattle]);
 
+  const handleUltimateChaos = useCallback(() => {
+      const randomClassDist = Math.random() > 0.5 ? 'mixed' : 'random';
+      const randomAIDist = Math.random() > 0.5 ? 'smart' : 'mixed';
+
+      setUnitClasses(true);
+      setAdvancedAI(true);
+      setClassDist(randomClassDist);
+      setAIDist(randomAIDist);
+
+      handleRandomTournament();
+
+      if (engineRef.current) {
+          engineRef.current.setCrazyMode(true);
+          setCrazyMode(true);
+          engineRef.current.setAdvancedSimulation(true, true, randomClassDist, randomAIDist);
+      }
+  }, [handleRandomTournament]);
+
   // Detect round finish and handle tournament logic
   useEffect(() => {
       if (gameState.status === 'finished' && gameState.winner && !isRoundProcessedRef.current) {
           isRoundProcessedRef.current = true;
+
+          const advInfo = engineRef.current?.getWinnerAdvancedInfo();
+
           // Add to match history
           const summary: MatchSummary = {
               id: `match-${Date.now()}`,
@@ -410,9 +479,31 @@ function App() {
               duration: gameState.stats.elapsedTime,
               conversions: gameState.stats.totalConversions,
               collisions: gameState.stats.totalCollisions,
-              timestamp: Date.now()
+              timestamp: Date.now(),
+              classWinner: advInfo?.class,
+              aiWinner: advInfo?.ai
           };
           setMatchHistory(prev => [summary, ...prev].slice(0, 20));
+
+          if (advInfo) {
+              setAdvancedStats(prev => {
+                  const newClass = { ...prev.classStats };
+                  const newAI = { ...prev.aiStats };
+                  if (advInfo.class === 'speed') newClass.speedWins++;
+                  if (advInfo.class === 'tank') newClass.tankWins++;
+                  if (advInfo.class === 'berserker') newClass.berserkerWins++;
+                  if (advInfo.class === 'normal') newClass.normalWins++;
+
+                  if (advInfo.ai === 'random') newAI.randomWins++;
+                  if (advInfo.ai === 'aggressive') newAI.aggressiveWins++;
+                  if (advInfo.ai === 'defensive') newAI.defensiveWins++;
+                  if (advInfo.ai === 'hunter') newAI.hunterWins++;
+                  if (advInfo.ai === 'chaotic') newAI.chaoticWins++;
+                  if (advInfo.ai === 'smart') newAI.smartWins++;
+
+                  return { classStats: newClass, aiStats: newAI };
+              });
+          }
 
           const newState = TournamentManager.addRoundResult(
               tournamentState,
@@ -492,6 +583,7 @@ function App() {
             onPowerZonesToggle={handlePowerZonesToggle}
             onRandomBattle={handleRandomBattle}
             onRandomTournament={handleRandomTournament}
+            onUltimateChaos={handleUltimateChaos}
             autoPlay={autoPlay}
             onAutoPlayToggle={setAutoPlay}
             onLoadPreset={handleLoadPreset}
@@ -500,6 +592,14 @@ function App() {
             selectedTool={selectedTool}
             onToolChange={setSelectedTool}
             crazyHistory={gameState.crazyMode.history}
+            unitClassesEnabled={unitClasses}
+            advancedAIEnabled={advancedAI}
+            classDist={classDist}
+            aiDist={aiDist}
+            onClassesToggle={handleClassesToggle}
+            onAIToggle={handleAIToggle}
+            onClassDistChange={handleClassDistChange}
+            onAIDistChange={handleAIDistChange}
             onTriggerCrazyEvent={handleTriggerCrazyEvent}
           />
 
@@ -585,7 +685,8 @@ function App() {
             playerNames={playerNames}
             stats={{
                 ...gameState.stats,
-                counts: currentCounts
+                counts: currentCounts,
+                advanced: advancedStats
             }}
             tournament={tournamentState}
           />
@@ -600,6 +701,10 @@ function App() {
 
           <CollapsibleSection title="Battle Feed" defaultExpanded={false} icon="⚡">
             <BattleFeed events={gameState.events} />
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Help & Guide" defaultExpanded={false} icon="❓">
+            <HelpCenter />
           </CollapsibleSection>
         </aside>
       </main>

@@ -13,6 +13,7 @@ import type {
 import CollapsibleSection from './CollapsibleSection';
 import TournamentDashboard from './TournamentDashboard';
 import ArenaBuilder, { type BuilderTool } from './ArenaBuilder';
+import AdvancedSimulationPanel from './AdvancedSimulationPanel';
 import DevPanel from './DevPanel';
 import CrazyEventHistory from './CrazyEventHistory';
 
@@ -41,6 +42,7 @@ interface ControlPanelProps {
   // Random Modes
   onRandomBattle: () => void;
   onRandomTournament: () => void;
+  onUltimateChaos: () => void;
   autoPlay: boolean;
   onAutoPlayToggle: (enabled: boolean) => void;
   // Arena Builder
@@ -51,6 +53,15 @@ interface ControlPanelProps {
   onToolChange: (tool: BuilderTool) => void;
   // Crazy History
   crazyHistory: CrazyEventName[];
+  // Advanced Sim
+  unitClassesEnabled: boolean;
+  advancedAIEnabled: boolean;
+  classDist: 'normal' | 'mixed' | 'random';
+  aiDist: 'random' | 'smart' | 'mixed';
+  onClassesToggle: (val: boolean) => void;
+  onAIToggle: (val: boolean) => void;
+  onClassDistChange: (val: any) => void;
+  onAIDistChange: (val: any) => void;
   // Dev Tools
   onTriggerCrazyEvent: (name: CrazyEventName) => void;
 }
@@ -79,6 +90,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onPowerZonesToggle,
   onRandomBattle,
   onRandomTournament,
+  onUltimateChaos,
   autoPlay,
   onAutoPlayToggle,
   onLoadPreset,
@@ -87,6 +99,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   selectedTool,
   onToolChange,
   crazyHistory,
+  unitClassesEnabled,
+  advancedAIEnabled,
+  classDist,
+  aiDist,
+  onClassesToggle,
+  onAIToggle,
+  onClassDistChange,
+  onAIDistChange,
   onTriggerCrazyEvent,
 }) => {
   const handleCountChange = (type: keyof GameCounts, value: string) => {
@@ -207,6 +227,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
       </CollapsibleSection>
 
+      <CollapsibleSection title="⚔ Advanced Simulation" defaultExpanded={false} icon="⚔">
+          <AdvancedSimulationPanel
+            enabled={unitClassesEnabled}
+            aiEnabled={advancedAIEnabled}
+            classDist={classDist}
+            aiDist={aiDist}
+            onClassesToggle={onClassesToggle}
+            onAIToggle={onAIToggle}
+            onClassDistChange={onClassDistChange}
+            onAIDistChange={onAIDistChange}
+          />
+      </CollapsibleSection>
+
       <CollapsibleSection title="Player Settings" defaultExpanded={false} icon="👥">
         <div className="section">
           <h3 className="section-subtitle" style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '0.5rem' }}>Player Names</h3>
@@ -316,6 +349,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                       Random Tournament
                   </button>
               </div>
+              <button
+                  onClick={onUltimateChaos}
+                  className="btn"
+                  style={{ background: 'linear-gradient(45deg, #EF4444, #8B5CF6)', color: 'white', width: '100%', marginTop: '0.5rem', fontWeight: '800' }}
+                  disabled={status === 'running' || status === 'paused'}
+              >
+                  🎲 Ultimate Chaos Mode
+              </button>
               <div className="input-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
                 <label style={{ margin: 0, fontSize: '0.8rem' }}>▶ Auto Play</label>
                 <button

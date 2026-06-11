@@ -10,7 +10,9 @@ import type {
   CrazyEventName,
   Obstacle,
   PowerZone,
-  ObstacleDensity
+  ObstacleDensity,
+  UnitClass,
+  AIMode
 } from '../types/game';
 import { checkCollision, resolveCollision } from './Collision';
 import { getWinningType } from './Rules';
@@ -34,6 +36,11 @@ export class GameEngine {
   private manualObstacles: Obstacle[] = [];
   private manualPowerZones: PowerZone[] = [];
   private hoveredObject: { type: 'obstacle' | 'zone', id: string } | null = null;
+
+  private unitClassesEnabled: boolean = false;
+  private advancedAIEnabled: boolean = false;
+  private classDistribution: 'normal' | 'mixed' | 'random' = 'normal';
+  private aiDistribution: 'random' | 'smart' | 'mixed' = 'random';
 
   private effectManager = new EffectManager();
   private particleManager: ParticleManager;
@@ -96,6 +103,19 @@ export class GameEngine {
 
   setCrazyMode(enabled: boolean) {
       this.crazyEventManager.setEnabled(enabled);
+      this.notifyState(null, true);
+  }
+
+  setAdvancedSimulation(
+      classesEnabled: boolean,
+      aiEnabled: boolean,
+      classDist: 'normal' | 'mixed' | 'random',
+      aiDist: 'random' | 'smart' | 'mixed'
+  ) {
+      this.unitClassesEnabled = classesEnabled;
+      this.advancedAIEnabled = aiEnabled;
+      this.classDistribution = classDist;
+      this.aiDistribution = aiDist;
       this.notifyState(null, true);
   }
 
@@ -235,6 +255,8 @@ export class GameEngine {
 
   spawn(counts: GameCounts, skipFeatureGeneration: boolean = false) {
     this.entities = [];
+    const unitClasses: ('normal' | 'speed' | 'tank' | 'berserker')[] = ['normal', 'speed', 'tank', 'berserker'];
+    const aiModes: ('random' | 'aggressive' | 'defensive' | 'hunter' | 'chaotic' | 'smart')[] = ['random', 'aggressive', 'defensive', 'hunter', 'chaotic', 'smart'];
     this.totalCollisions = 0;
     this.totalConversions = 0;
     this.obstacleCollisions = 0;
@@ -296,6 +318,24 @@ export class GameEngine {
         const velocityX = (Math.random() - 0.5) * 4;
         const velocityY = (Math.random() - 0.5) * 4;
 
+        let unitClass: any = 'normal';
+        if (this.unitClassesEnabled) {
+            if (this.classDistribution === 'mixed') {
+                unitClass = unitClasses[Math.floor(Math.random() * unitClasses.length)];
+            } else if (this.classDistribution === 'random') {
+                unitClass = unitClasses[Math.floor(Math.random() * unitClasses.length)];
+            }
+        }
+
+        let aiMode: any = 'random';
+        if (this.advancedAIEnabled) {
+            if (this.aiDistribution === 'smart') {
+                aiMode = 'smart';
+            } else if (this.aiDistribution === 'mixed') {
+                aiMode = aiModes[Math.floor(Math.random() * aiModes.length)];
+            }
+        }
+
         this.entities.push(
           new Entity({
             id: `${type}-${i}-${Math.random().toString(36).substr(2, 9)}`,
@@ -305,6 +345,8 @@ export class GameEngine {
             velocityY,
             radius,
             type,
+            unitClass,
+            aiMode
           })
         );
       }
@@ -569,7 +611,7 @@ export class GameEngine {
             }
         });
 
-        entity.update(this.arena, entitySpeedMult);
+        entity.update(this.arena, this.entities, entitySpeedMult);
 
         if (!this.isInside(entity.x, entity.y, entity.radius)) {
             const nx = this.getNormalX(entity.x, entity.y);
@@ -686,6 +728,18 @@ export class GameEngine {
     }
 
     this.checkWinner();
+  }
+
+  getWinnerAdvancedInfo(): { class: UnitClass, ai: AIMode } | null {
+      const counts = this.getCounts();
+      const activeTypes = (Object.keys(counts) as EntityType[]).filter((type) => counts[type] > 0);
+      if (activeTypes.length === 1 && this.entities.length > 0) {
+          const winner = this.entities.find(e => e.type === activeTypes[0]);
+          if (winner) {
+              return { class: winner.unitClass, ai: winner.aiMode };
+          }
+      }
+      return null;
   }
 
   private getColorForType(type: EntityType): string {
@@ -944,7 +998,11 @@ export class GameEngine {
       powerZones: this.powerZonesEnabled,
       autoPlay: false, // Managed by App.tsx
       manualObstacles: this.manualObstacles,
-      manualPowerZones: this.manualPowerZones
+      manualPowerZones: this.manualPowerZones,
+      unitClassesEnabled: this.unitClassesEnabled,
+      advancedAIEnabled: this.advancedAIEnabled,
+      classDistribution: this.classDistribution,
+      aiDistribution: this.aiDistribution
     });
   }
 }
