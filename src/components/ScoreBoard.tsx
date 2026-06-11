@@ -1,13 +1,14 @@
 import React from 'react';
-import type { GameCounts, PlayerNames, EntityType, GameStats } from '../types/game';
+import type { GameCounts, PlayerNames, EntityType, GameStats, TournamentState } from '../types/game';
 import { getEmoji } from '../game/Rules';
 
 interface ScoreBoardProps {
   playerNames: PlayerNames;
   stats: GameStats;
+  tournament: TournamentState;
 }
 
-const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats }) => {
+const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament }) => {
   const { counts, elapsedTime, arenaShape, totalCollisions, totalConversions } = stats;
 
   const formatTime = (seconds: number) => {
@@ -65,7 +66,7 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats }) => {
         </div>
       </div>
 
-      <div className="card stats-card">
+      <div className="card stats-card" style={{ marginTop: '1rem' }}>
         <h2 className="section-title">📈 Statistics</h2>
         <div className="stats-grid">
           <div className="stat-item">
@@ -90,6 +91,26 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats }) => {
           </div>
         </div>
       </div>
+
+      {tournament.type !== 'single' && tournament.champion && (
+          <div className="card tournament-stats-card" style={{ marginTop: '1rem', background: 'rgba(250, 204, 21, 0.1)', border: '1px solid var(--scissors-color)' }}>
+              <h2 className="section-title" style={{ color: 'var(--scissors-color)' }}>🏆 Tournament Stats</h2>
+              <div className="stats-grid">
+                <div className="stat-item">
+                    <span className="stat-label">Avg Round Time</span>
+                    <span className="stat-value">{formatTime(tournament.stats.averageRoundTime)}</span>
+                </div>
+                <div className="stat-item">
+                    <span className="stat-label">Longest Round</span>
+                    <span className="stat-value">{formatTime(tournament.stats.longestRound)}</span>
+                </div>
+                <div className="stat-item">
+                    <span className="stat-label">Shortest Round</span>
+                    <span className="stat-value">{formatTime(tournament.stats.shortestRound)}</span>
+                </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 };

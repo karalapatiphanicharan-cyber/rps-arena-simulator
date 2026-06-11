@@ -1,5 +1,5 @@
 import React from 'react';
-import type { GameCounts, PlayerNames, GameStatus, ArenaShape } from '../types/game';
+import type { GameCounts, PlayerNames, GameStatus, ArenaShape, TournamentType } from '../types/game';
 
 interface ControlPanelProps {
   counts: GameCounts;
@@ -7,12 +7,15 @@ interface ControlPanelProps {
   status: GameStatus;
   arenaShape: ArenaShape;
   simulationSpeed: number;
+  tournamentType: TournamentType;
   onCountsChange: (counts: GameCounts) => void;
   onNamesChange: (names: PlayerNames) => void;
   onShapeChange: (shape: ArenaShape) => void;
   onSpeedChange: (speed: number) => void;
+  onTournamentTypeChange: (type: TournamentType) => void;
   onStart: () => void;
   onReset: () => void;
+  onResetTournament: () => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -21,12 +24,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   status,
   arenaShape,
   simulationSpeed,
+  tournamentType,
   onCountsChange,
   onNamesChange,
   onShapeChange,
   onSpeedChange,
+  onTournamentTypeChange,
   onStart,
   onReset,
+  onResetTournament,
 }) => {
   const handleCountChange = (type: keyof GameCounts, value: string) => {
     const numValue = parseInt(value) || 0;
@@ -44,6 +50,24 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       <h2 className="section-title">⚙️ Game Controls</h2>
 
       <div className="section">
+        <h3 className="section-subtitle" style={{ fontSize: '1rem', color: '#94A3B8', marginBottom: '1rem' }}>Game Mode</h3>
+        <div className="input-group">
+          <label>Tournament Type</label>
+          <select
+            value={tournamentType}
+            onChange={(e) => onTournamentTypeChange(e.target.value as TournamentType)}
+            disabled={status === 'running' || status === 'paused'}
+            className="modern-select"
+          >
+            <option value="single">Single Match</option>
+            <option value="bo3">Best of 3</option>
+            <option value="bo5">Best of 5</option>
+            <option value="bo7">Best of 7</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="section" style={{ marginTop: '1.5rem' }}>
         <h3 className="section-subtitle" style={{ fontSize: '1rem', color: '#94A3B8', marginBottom: '1rem' }}>Arena Settings</h3>
         <div className="input-group">
           <label>Arena Shape</label>
@@ -51,15 +75,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             value={arenaShape}
             onChange={(e) => onShapeChange(e.target.value as ArenaShape)}
             disabled={status === 'running' || status === 'paused'}
-            style={{
-                width: '100%',
-                background: '#111827',
-                border: '1px solid var(--border-color)',
-                borderRadius: '0.5rem',
-                padding: '0.625rem 0.875rem',
-                color: 'white',
-                fontSize: '0.875rem'
-            }}
+            className="modern-select"
           >
             <option value="rectangle">Rectangle</option>
             <option value="square">Square</option>
@@ -74,15 +90,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <select
             value={simulationSpeed}
             onChange={(e) => onSpeedChange(Number(e.target.value))}
-            style={{
-                width: '100%',
-                background: '#111827',
-                border: '1px solid var(--border-color)',
-                borderRadius: '0.5rem',
-                padding: '0.625rem 0.875rem',
-                color: 'white',
-                fontSize: '0.875rem'
-            }}
+            className="modern-select"
           >
             <option value="0.5">0.5x</option>
             <option value="1">1x</option>
@@ -170,6 +178,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </button>
         <button onClick={onReset} className="btn btn-reset">
           Reset Arena
+        </button>
+        <button onClick={onResetTournament} className="btn" style={{ background: '#4B5563', color: 'white' }}>
+          Restart Tournament
         </button>
       </div>
     </div>

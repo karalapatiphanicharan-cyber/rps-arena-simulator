@@ -42,6 +42,31 @@ export interface GameStats {
   arenaShape: ArenaShape;
 }
 
+export type TournamentType = 'single' | 'bo3' | 'bo5' | 'bo7';
+
+export interface MatchResult {
+  round: number;
+  winner: EntityType;
+  duration: number;
+}
+
+export interface TournamentStats {
+  totalRounds: number;
+  averageRoundTime: number;
+  longestRound: number;
+  shortestRound: number;
+  champion: EntityType | null;
+}
+
+export interface TournamentState {
+  type: TournamentType;
+  currentRound: number;
+  wins: GameCounts;
+  history: MatchResult[];
+  champion: EntityType | null;
+  stats: TournamentStats;
+}
+
 export interface GameState {
   counts: GameCounts;
   status: GameStatus;
@@ -50,6 +75,7 @@ export interface GameState {
   stats: GameStats;
   events: BattleEvent[];
   simulationSpeed: number;
+  tournament: TournamentState;
 }
 
 export interface ArenaDimensions {

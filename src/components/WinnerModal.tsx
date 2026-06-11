@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import type { EntityType, GameCounts, PlayerNames, GameStats } from '../types/game';
+import React, { useEffect, useState } from 'react';
+import type { EntityType, GameCounts, PlayerNames, GameStats, TournamentState } from '../types/game';
 import { getEmoji } from '../game/Rules';
 import confetti from 'canvas-confetti';
 
@@ -8,10 +8,26 @@ interface WinnerModalProps {
   counts: GameCounts;
   playerNames: PlayerNames;
   stats: GameStats;
+  tournament: TournamentState;
   onRestart: () => void;
+  onResetTournament: () => void;
 }
 
-const WinnerModal: React.FC<WinnerModalProps> = ({ winner, counts, playerNames, stats, onRestart }) => {
+const WinnerModal: React.FC<WinnerModalProps> = ({
+    winner, counts, playerNames, stats, tournament, onRestart, onResetTournament
+}) => {
+  const [countdown, setCountdown] = useState(3);
+
+  useEffect(() => {
+    if (winner && !tournament.champion && tournament.type !== 'single') {
+        setCountdown(3);
+        const timer = setInterval(() => {
+            setCountdown(prev => prev - 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }
+  }, [winner, tournament.champion, tournament.type]);
+
   useEffect(() => {
     if (winner) {
       const duration = 3 * 1000;
@@ -38,6 +54,7 @@ const WinnerModal: React.FC<WinnerModalProps> = ({ winner, counts, playerNames, 
 
   if (!winner) return null;
 
+  const isChampion = !!tournament.champion;
   const winnerName = playerNames[winner];
 
   const formatTime = (seconds: number) => {
@@ -51,36 +68,75 @@ const WinnerModal: React.FC<WinnerModalProps> = ({ winner, counts, playerNames, 
   return (
     <div className="modal-overlay">
       <div className="modal-content" style={{ position: 'relative', zIndex: 100 }}>
-        <h1 className="winner-title">🏆 {winnerName.toUpperCase()} WINS!</h1>
+        {isChampion ? (
+            <h1 className="winner-title champ-title">🏆 {winnerName.toUpperCase()} IS THE CHAMPION!</h1>
+        ) : (
+            <h1 className="winner-title">{winnerName.toUpperCase()} WINS ROUND {tournament.history.length}!</h1>
+        )}
+
         <div className="winner-display" style={{ animation: 'bounce 1s infinite' }}>{getEmoji(winner)}</div>
 
         <div className="winner-stats">
-          <div className="stat-item">
-            <span className="stat-label">Winner Type</span>
-            <span className="stat-value">{winnerName}</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Final Count</span>
-            <span className="stat-value">{counts[winner]} {winnerName}s</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Battle Duration</span>
-            <span className="stat-value">{formatTime(stats.elapsedTime)}</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Arena Shape</span>
-            <span className="stat-value">{capitalize(stats.arenaShape)}</span>
-          </div>
+          {isChampion ? (
+              <>
+                <div className="stat-item">
+                    <span className="stat-label">Champion</span>
+                    <span className="stat-value">{winnerName}</span>
+                </div>
+                <div className="stat-item">
+                    <span className="stat-label">Tournament Type</span>
+                    <span className="stat-value">{tournament.type.toUpperCase()}</span>
+                </div>
+                <div className="stat-item">
+                    <span className="stat-label">Total Rounds</span>
+                    <span className="stat-value">{tournament.stats.totalRounds}</span>
+                </div>
+                <div className="stat-item">
+                    <span className="stat-label">Avg Round Time</span>
+                    <span className="stat-value">{formatTime(tournament.stats.averageRoundTime)}</span>
+                </div>
+              </>
+          ) : (
+              <>
+                <div className="stat-item">
+                    <span className="stat-label">Winner Type</span>
+                    <span className="stat-value">{winnerName}</span>
+                </div>
+                <div className="stat-item">
+                    <span className="stat-label">Final Count</span>
+                    <span className="stat-value">{counts[winner]} {winnerName}{winnerName.toLowerCase() === 'scissors' ? '' : 's'}</span>
+                </div>
+                <div className="stat-item">
+                    <span className="stat-label">Battle Duration</span>
+                    <span className="stat-value">{formatTime(stats.elapsedTime)}</span>
+                </div>
+                {tournament.type !== 'single' && (
+                    <div className="next-round-indicator" style={{ marginTop: '1rem', color: '#10B981', fontWeight: '700' }}>
+                        Next Round in {countdown}...
+                    </div>
+                )}
+              </>
+          )}
         </div>
 
-        <button onClick={onRestart} className="btn btn-start btn-large">
-          Play Again
-        </button>
+        {isChampion ? (
+            <button onClick={onResetTournament} className="btn btn-start btn-large">
+                Restart Tournament
+            </button>
+        ) : (
+            <button onClick={onRestart} className="btn btn-start btn-large">
+                {tournament.type === 'single' ? 'Play Again' : 'Next Round Now'}
+            </button>
+        )}
       </div>
       <style>{`
         @keyframes bounce {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-20px); }
+        }
+        .champ-title {
+            color: #FACC15;
+            text-shadow: 0 0 20px rgba(250, 204, 21, 0.5);
         }
       `}</style>
     </div>
