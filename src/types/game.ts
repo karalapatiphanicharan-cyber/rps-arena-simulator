@@ -128,6 +128,23 @@ export interface PowerZone {
   radius: number;
 }
 
+export interface MatchSummary {
+    id: string;
+    arenaShape: ArenaShape;
+    winner: EntityType;
+    duration: number;
+    conversions: number;
+    collisions: number;
+    timestamp: number;
+}
+
+export interface ArenaPreset {
+    name: string;
+    shape: ArenaShape;
+    obstacles: Obstacle[];
+    powerZones: PowerZone[];
+}
+
 export interface GameState {
   counts: GameCounts;
   status: GameStatus;
@@ -140,6 +157,9 @@ export interface GameState {
   crazyMode: CrazyModeState;
   obstacles: ObstacleDensity;
   powerZones: boolean;
+  autoPlay: boolean;
+  manualObstacles: Obstacle[];
+  manualPowerZones: PowerZone[];
 }
 
 export interface ArenaDimensions {

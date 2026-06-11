@@ -2,8 +2,7 @@ import type {
     TournamentType,
     TournamentState,
     MatchResult,
-    EntityType,
-    GameCounts
+    EntityType
 } from '../types/game';
 
 export class TournamentManager {
