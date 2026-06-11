@@ -1,10 +1,20 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import './styles.css';
-import type { GameCounts, PlayerNames, GameStatus, EntityType, ArenaShape } from './types/game';
+import type {
+    GameCounts,
+    PlayerNames,
+    GameStatus,
+    EntityType,
+    ArenaShape,
+    GameState
+} from './types/game';
 import { GameEngine } from './game/GameEngine';
 import ControlPanel from './components/ControlPanel';
 import ScoreBoard from './components/ScoreBoard';
 import WinnerModal from './components/WinnerModal';
+import ProgressIndicator from './components/ProgressIndicator';
+import BattleFeed from './components/BattleFeed';
+import { soundManager } from './game/SoundManager';
 
 const ARENA_WIDTH = 1000;
 const ARENA_HEIGHT = 600;
@@ -26,19 +36,32 @@ function App() {
   });
 
   const [arenaShape, setArenaShape] = useState<ArenaShape>('rectangle');
+  const [simulationSpeed, setSimulationSpeed] = useState(1);
+  const [isMuted, setIsMuted] = useState(true);
 
-  const [gameState, setGameState] = useState<{
-    status: GameStatus;
-    counts: GameCounts;
-    winner: EntityType | null;
-  }>({
-    status: 'idle',
+  useEffect(() => {
+    soundManager.setEnabled(!isMuted);
+  }, [isMuted]);
+
+  const [gameState, setGameState] = useState<GameState>({
     counts: { rock: 0, paper: 0, scissors: 0 },
+    status: 'idle',
     winner: null,
+    arenaShape: 'rectangle',
+    simulationSpeed: 1,
+    events: [],
+    stats: {
+        totalCollisions: 0,
+        totalConversions: 0,
+        counts: { rock: 0, paper: 0, scissors: 0 },
+        elapsedTime: 0,
+        arenaShape: 'rectangle'
+    }
   });
 
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const timerRef = useRef<number | null>(null);
+  const handleStateChange = useCallback((state: GameState) => {
+      setGameState(state);
+  }, []);
 
   useEffect(() => {
     if (canvasRef.current && !engineRef.current) {
@@ -47,45 +70,31 @@ function App() {
         engineRef.current = new GameEngine(
           ctx,
           { width: ARENA_WIDTH, height: ARENA_HEIGHT },
-          (state) => {
-            setGameState(state);
-          }
+          handleStateChange
         );
       }
     }
-  }, []);
-
-  useEffect(() => {
-    if (gameState.status === 'running') {
-      const startTime = Date.now() - elapsedTime * 1000;
-      timerRef.current = window.setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [gameState.status]);
+  }, [handleStateChange]);
 
   const handleStart = () => {
     if (engineRef.current) {
-      setElapsedTime(0);
       engineRef.current.setArenaShape(arenaShape);
       engineRef.current.spawn(counts);
       engineRef.current.start();
     }
   };
 
+  const handlePause = () => {
+    if (engineRef.current) engineRef.current.pause();
+  };
+
+  const handleResume = () => {
+    if (engineRef.current) engineRef.current.start();
+  };
+
   const handleReset = () => {
     if (engineRef.current) {
       engineRef.current.reset();
-      setElapsedTime(0);
     }
   };
 
@@ -102,10 +111,15 @@ function App() {
       }
   };
 
-  const totalEntities = gameState.status === 'idle'
-    ? counts.rock + counts.paper + counts.scissors
-    : gameState.counts.rock + gameState.counts.paper + gameState.counts.scissors;
+  const handleSpeedChange = (speed: number) => {
+      setSimulationSpeed(speed);
+      if (engineRef.current) {
+          engineRef.current.setSimulationSpeed(speed);
+      }
+  };
 
+  const currentCounts = gameState.status === 'idle' ? counts : gameState.counts;
+  const totalEntities = currentCounts.rock + currentCounts.paper + currentCounts.scissors;
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   return (
@@ -122,15 +136,54 @@ function App() {
             playerNames={playerNames}
             status={gameState.status}
             arenaShape={arenaShape}
+            simulationSpeed={simulationSpeed}
             onCountsChange={setCounts}
             onNamesChange={setPlayerNames}
             onShapeChange={handleShapeChange}
+            onSpeedChange={handleSpeedChange}
             onStart={handleStart}
             onReset={handleReset}
           />
+          <BattleFeed events={gameState.events} />
+
+          <div className="card" style={{ marginTop: '1rem' }}>
+              <button
+                onClick={() => setIsMuted(!isMuted)}
+                className="btn"
+                style={{ width: '100%', background: isMuted ? '#4B5563' : '#10B981' }}
+              >
+                {isMuted ? '🔇 Sound: OFF' : '🔊 Sound: ON'}
+              </button>
+          </div>
         </aside>
 
         <section className="arena-section">
+          <div className="card spectator-controls" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', justifyContent: 'center', padding: '1rem' }}>
+             <button
+                onClick={handleResume}
+                disabled={gameState.status !== 'paused'}
+                className="btn btn-start"
+                style={{ flex: 1 }}
+             >
+               ▶ Resume
+             </button>
+             <button
+                onClick={handlePause}
+                disabled={gameState.status !== 'running'}
+                className="btn"
+                style={{ flex: 1, background: '#F59E0B' }}
+             >
+               ⏸ Pause
+             </button>
+             <button
+                onClick={handleRestart}
+                className="btn btn-reset"
+                style={{ flex: 1 }}
+             >
+               🔄 Restart
+             </button>
+          </div>
+
           <div className="arena-header">
             <h2 className="section-title">⚔ Battle Arena: {capitalize(arenaShape)}</h2>
             <div className="stat-badge">
@@ -144,15 +197,16 @@ function App() {
               height={ARENA_HEIGHT}
             />
           </div>
+
+          <div className="card" style={{ marginTop: '1rem' }}>
+              <ProgressIndicator counts={currentCounts} />
+          </div>
         </section>
 
         <aside className="scoreboard-column">
           <ScoreBoard
-            counts={gameState.status === 'idle' ? counts : gameState.counts}
             playerNames={playerNames}
-            elapsedTime={elapsedTime}
-            totalEntities={totalEntities}
-            arenaShape={arenaShape}
+            stats={gameState.stats}
           />
         </aside>
       </main>
@@ -161,7 +215,7 @@ function App() {
         winner={gameState.winner}
         counts={gameState.counts}
         playerNames={playerNames}
-        elapsedTime={elapsedTime}
+        stats={gameState.stats}
         onRestart={handleRestart}
       />
     </div>

@@ -1,7 +1,19 @@
 import { Entity } from './Entity';
-import type { ArenaDimensions, EntityType, GameCounts, GameStatus, ArenaShape } from '../types/game';
+import type {
+  ArenaDimensions,
+  EntityType,
+  GameCounts,
+  GameStatus,
+  ArenaShape,
+  BattleEvent,
+  GameStats,
+  GameState
+} from '../types/game';
 import { checkCollision, resolveCollision } from './Collision';
 import { getWinningType } from './Rules';
+import { EffectManager } from './EffectManager';
+import { ParticleManager } from './ParticleManager';
+import { soundManager } from './SoundManager';
 
 export class GameEngine {
   private entities: Entity[] = [];
@@ -9,20 +21,38 @@ export class GameEngine {
   private arena: ArenaDimensions;
   private shape: ArenaShape = 'rectangle';
   private animationId: number | null = null;
-  private onStateChange: (state: { counts: GameCounts; status: GameStatus; winner: EntityType | null; arenaShape: ArenaShape }) => void;
+  private status: GameStatus = 'idle';
+  private simulationSpeed: number = 1;
+
+  private effectManager = new EffectManager();
+  private particleManager: ParticleManager;
+
+  private totalCollisions = 0;
+  private totalConversions = 0;
+  private events: BattleEvent[] = [];
+  private startTime: number = 0;
+  private elapsedAtPause: number = 0;
+
+  private onStateChange: (state: GameState) => void;
 
   constructor(
     ctx: CanvasRenderingContext2D,
     arena: ArenaDimensions,
-    onStateChange: (state: { counts: GameCounts; status: GameStatus; winner: EntityType | null; arenaShape: ArenaShape }) => void
+    onStateChange: (state: GameState) => void
   ) {
     this.ctx = ctx;
     this.arena = arena;
     this.onStateChange = onStateChange;
+    this.particleManager = new ParticleManager(arena.width, arena.height);
   }
 
   setArenaShape(shape: ArenaShape) {
     this.shape = shape;
+    this.notifyState();
+  }
+
+  setSimulationSpeed(speed: number) {
+    this.simulationSpeed = speed;
     this.notifyState();
   }
 
@@ -33,22 +63,12 @@ export class GameEngine {
 
     switch (this.shape) {
       case 'rectangle':
-        return (
-          x - radius >= 0 &&
-          x + radius <= width &&
-          y - radius >= 0 &&
-          y + radius <= height
-        );
+        return x - radius >= 0 && x + radius <= width && y - radius >= 0 && y + radius <= height;
       case 'square': {
         const size = Math.min(width, height);
         const left = centerX - size / 2;
         const top = centerY - size / 2;
-        return (
-          x - radius >= left &&
-          x + radius <= left + size &&
-          y - radius >= top &&
-          y + radius <= top + size
-        );
+        return x - radius >= left && x + radius <= left + size && y - radius >= top && y + radius <= top + size;
       }
       case 'circle': {
         const r = Math.min(width, height) / 2 - radius;
@@ -57,13 +77,11 @@ export class GameEngine {
         return Math.sqrt(dx * dx + dy * dy) <= r;
       }
       case 'triangle': {
-        // Isosceles triangle
         const size = Math.min(width, height);
         const h = (size * Math.sqrt(3)) / 2;
         const p1 = { x: centerX, y: centerY - h / 2 };
         const p2 = { x: centerX - size / 2, y: centerY + h / 2 };
         const p3 = { x: centerX + size / 2, y: centerY + h / 2 };
-
         return this.pointInTriangle({ x, y }, p1, p2, p3, radius);
       }
       case 'hexagon': {
@@ -80,13 +98,9 @@ export class GameEngine {
     const d1 = (pt.x - p2.x) * (p1.y - p2.y) - (p1.x - p2.x) * (pt.y - p2.y);
     const d2 = (pt.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (pt.y - p3.y);
     const d3 = (pt.x - p1.x) * (p3.y - p1.y) - (p3.x - p1.x) * (pt.y - p1.y);
-
     const has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
     const has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
-
     if (has_neg && has_pos) return false;
-
-    // Simple distance to edges for radius buffer
     const distToEdge = (pa: {x:number, y:number}, pb: {x:number, y:number}) => {
         const l2 = (pa.x-pb.x)**2 + (pa.y-pb.y)**2;
         if (l2 === 0) return Math.sqrt((pt.x-pa.x)**2 + (pt.y-pa.y)**2);
@@ -94,7 +108,6 @@ export class GameEngine {
         t = Math.max(0, Math.min(1, t));
         return Math.sqrt((pt.x - (pa.x + t*(pb.x-pa.x)))**2 + (pt.y - (pa.y + t*(pb.y-pa.y)))**2);
     }
-
     return distToEdge(p1, p2) >= r && distToEdge(p2, p3) >= r && distToEdge(p3, p1) >= r;
   }
 
@@ -107,6 +120,13 @@ export class GameEngine {
 
   spawn(counts: GameCounts) {
     this.entities = [];
+    this.totalCollisions = 0;
+    this.totalConversions = 0;
+    this.events = [];
+    this.effectManager.clear();
+    this.startTime = Date.now();
+    this.elapsedAtPause = 0;
+
     const types: EntityType[] = ['rock', 'paper', 'scissors'];
     const radius = 12;
 
@@ -114,12 +134,10 @@ export class GameEngine {
       for (let i = 0; i < counts[type]; i++) {
         let x, y, colliding;
         let attempts = 0;
-
         do {
           x = radius + Math.random() * (this.arena.width - 2 * radius);
           y = radius + Math.random() * (this.arena.height - 2 * radius);
           colliding = !this.isInside(x, y, radius);
-
           if (!colliding) {
             for (const entity of this.entities) {
               const dx = x - entity.x;
@@ -149,13 +167,20 @@ export class GameEngine {
         );
       }
     });
-
+    this.status = 'idle';
     this.notifyState();
   }
 
   start() {
-    if (this.animationId) return;
+    if (this.status === 'running') return;
+    if (this.status === 'paused') {
+        this.startTime = Date.now() - this.elapsedAtPause * 1000;
+    } else {
+        this.startTime = Date.now();
+    }
+    this.status = 'running';
     const loop = () => {
+      if (this.status !== 'running') return;
       this.update();
       this.draw();
       this.animationId = requestAnimationFrame(loop);
@@ -163,7 +188,19 @@ export class GameEngine {
     this.animationId = requestAnimationFrame(loop);
   }
 
+  pause() {
+    if (this.status !== 'running') return;
+    this.status = 'paused';
+    this.elapsedAtPause = (Date.now() - this.startTime) / 1000;
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+    this.notifyState();
+  }
+
   stop() {
+    this.status = 'idle';
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
@@ -173,28 +210,32 @@ export class GameEngine {
   reset() {
     this.stop();
     this.entities = [];
+    this.totalCollisions = 0;
+    this.totalConversions = 0;
+    this.events = [];
+    this.effectManager.clear();
+    this.elapsedAtPause = 0;
     this.draw();
     this.notifyState();
   }
 
   private update() {
+    const sm = this.simulationSpeed;
+
+    this.particleManager.update(sm);
+    this.effectManager.update();
+
     this.entities.forEach((entity) => {
         const oldX = entity.x;
         const oldY = entity.y;
-
-        entity.update(this.arena);
+        entity.update(this.arena, sm);
 
         if (!this.isInside(entity.x, entity.y, entity.radius)) {
-            // Very simple wall bounce: find normal and reflect
             const nx = this.getNormalX(entity.x, entity.y);
             const ny = this.getNormalY(entity.x, entity.y);
-
-            // Reflect velocity: v = v - 2(v.n)n
             const dot = entity.velocityX * nx + entity.velocityY * ny;
             entity.velocityX -= 2 * dot * nx;
             entity.velocityY -= 2 * dot * ny;
-
-            // Revert position and push in
             entity.x = oldX;
             entity.y = oldY;
             entity.x += nx * 2;
@@ -208,11 +249,54 @@ export class GameEngine {
         const e2 = this.entities[j];
 
         if (checkCollision(e1, e2)) {
+          this.totalCollisions++;
+          soundManager.playCollision();
+          this.effectManager.addEffect({
+              id: `coll-${Date.now()}-${Math.random()}`,
+              x: (e1.x + e2.x) / 2,
+              y: (e1.y + e2.y) / 2,
+              type: 'collision',
+              startTime: Date.now(),
+              duration: 250
+          });
+
           resolveCollision(e1, e2);
+          const oldType1 = e1.type;
+          const oldType2 = e2.type;
           const winnerType = getWinningType(e1.type, e2.type);
+
           if (winnerType) {
-            e1.type = winnerType;
-            e2.type = winnerType;
+            if (e1.type !== winnerType || e2.type !== winnerType) {
+                this.totalConversions++;
+                soundManager.playConversion();
+                const loserType = e1.type === winnerType ? e2.type : e1.type;
+                this.addEvent(winnerType, loserType);
+
+                if (e1.type !== winnerType) {
+                    this.effectManager.addEffect({
+                        id: `conv-${e1.id}-${Date.now()}`,
+                        x: e1.x,
+                        y: e1.y,
+                        type: 'conversion',
+                        startTime: Date.now(),
+                        duration: 300,
+                        color: this.getColorForType(winnerType)
+                    });
+                }
+                if (e2.type !== winnerType) {
+                    this.effectManager.addEffect({
+                        id: `conv-${e2.id}-${Date.now()}`,
+                        x: e2.x,
+                        y: e2.y,
+                        type: 'conversion',
+                        startTime: Date.now(),
+                        duration: 300,
+                        color: this.getColorForType(winnerType)
+                    });
+                }
+                e1.type = winnerType;
+                e2.type = winnerType;
+            }
           }
         }
       }
@@ -221,17 +305,35 @@ export class GameEngine {
     this.checkWinner();
   }
 
+  private getColorForType(type: EntityType): string {
+      switch(type) {
+          case 'rock': return '#EF4444';
+          case 'paper': return '#3B82F6';
+          case 'scissors': return '#FACC15';
+          default: return '#FFFFFF';
+      }
+  }
+
+  private addEvent(winner: EntityType, loser: EntityType) {
+      const event: BattleEvent = {
+          id: `evt-${Date.now()}-${Math.random()}`,
+          type: 'conversion',
+          winner,
+          loser,
+          timestamp: Date.now()
+      };
+      this.events = [event, ...this.events].slice(0, 5);
+  }
+
   private getNormalX(x: number, y: number): number {
       const centerX = this.arena.width / 2;
       const centerY = this.arena.height / 2;
-
       if (this.shape === 'circle') {
           const dx = x - centerX;
           const dy = y - centerY;
           const dist = Math.sqrt(dx*dx + dy*dy);
           return -dx / dist;
       }
-
       if (this.shape === 'rectangle' || this.shape === 'square') {
           const size = this.shape === 'square' ? Math.min(this.arena.width, this.arena.height) : 0;
           const left = this.shape === 'square' ? centerX - size / 2 : 0;
@@ -240,8 +342,6 @@ export class GameEngine {
           if (x > right - 20) return -1;
           return 0;
       }
-
-      // Fallback to center for complex shapes
       const dx = x - centerX;
       const dist = Math.sqrt((x-centerX)**2 + (y-centerY)**2);
       return -dx / dist;
@@ -250,14 +350,12 @@ export class GameEngine {
   private getNormalY(x: number, y: number): number {
     const centerX = this.arena.width / 2;
     const centerY = this.arena.height / 2;
-
     if (this.shape === 'circle') {
         const dx = x - centerX;
         const dy = y - centerY;
         const dist = Math.sqrt(dx*dx + dy*dy);
         return -dy / dist;
     }
-
     if (this.shape === 'rectangle' || this.shape === 'square') {
         const size = this.shape === 'square' ? Math.min(this.arena.width, this.arena.height) : 0;
         const top = this.shape === 'square' ? centerY - size / 2 : 0;
@@ -266,7 +364,6 @@ export class GameEngine {
         if (y > bottom - 20) return -1;
         return 0;
     }
-
     const dy = y - centerY;
     const dist = Math.sqrt((x-centerX)**2 + (y-centerY)**2);
     return -dy / dist;
@@ -276,9 +373,14 @@ export class GameEngine {
     this.ctx.fillStyle = '#111827';
     this.ctx.fillRect(0, 0, this.arena.width, this.arena.height);
 
-    // Draw boundary
+    this.particleManager.draw(this.ctx);
+
+    // Draw boundary with glow
+    this.ctx.save();
     this.ctx.strokeStyle = '#374151';
-    this.ctx.lineWidth = 2;
+    this.ctx.lineWidth = 3;
+    this.ctx.shadowBlur = 10;
+    this.ctx.shadowColor = '#3B82F6';
     this.ctx.beginPath();
 
     const { width, height } = this.arena;
@@ -287,7 +389,7 @@ export class GameEngine {
 
     switch (this.shape) {
         case 'rectangle':
-            this.ctx.strokeRect(0, 0, width, height);
+            this.ctx.strokeRect(2, 2, width-4, height-4);
             break;
         case 'square': {
             const size = Math.min(width, height);
@@ -295,7 +397,7 @@ export class GameEngine {
             break;
         }
         case 'circle':
-            this.ctx.arc(centerX, centerY, Math.min(width, height) / 2, 0, Math.PI * 2);
+            this.ctx.arc(centerX, centerY, Math.min(width, height) / 2 - 2, 0, Math.PI * 2);
             this.ctx.stroke();
             break;
         case 'triangle': {
@@ -309,7 +411,7 @@ export class GameEngine {
             break;
         }
         case 'hexagon': {
-            const r = Math.min(width, height) / 2;
+            const r = Math.min(width, height) / 2 - 2;
             for (let i = 0; i < 6; i++) {
                 const angle = (i * Math.PI) / 3;
                 const x = centerX + r * Math.cos(angle);
@@ -322,8 +424,10 @@ export class GameEngine {
             break;
         }
     }
+    this.ctx.restore();
 
     this.entities.forEach((entity) => entity.draw(this.ctx));
+    this.effectManager.draw(this.ctx);
   }
 
   private checkWinner() {
@@ -331,13 +435,10 @@ export class GameEngine {
     const activeTypes = (Object.keys(counts) as EntityType[]).filter((type) => counts[type] > 0);
 
     if (activeTypes.length === 1 && this.entities.length > 0) {
-      this.stop();
-      this.onStateChange({
-        counts,
-        status: 'finished',
-        winner: activeTypes[0],
-        arenaShape: this.shape
-      });
+      this.status = 'finished';
+      soundManager.playWinner();
+      if (this.animationId) cancelAnimationFrame(this.animationId);
+      this.notifyState(activeTypes[0]);
     } else {
       this.notifyState();
     }
@@ -353,12 +454,26 @@ export class GameEngine {
     );
   }
 
-  private notifyState() {
+  private notifyState(winner: EntityType | null = null) {
+    const counts = this.getCounts();
+    const elapsedTime = this.status === 'paused'
+        ? this.elapsedAtPause
+        : (Date.now() - this.startTime) / 1000;
+
     this.onStateChange({
-      counts: this.getCounts(),
-      status: this.animationId ? 'running' : 'idle',
-      winner: null,
-      arenaShape: this.shape
+      counts,
+      status: this.status,
+      winner: winner,
+      arenaShape: this.shape,
+      simulationSpeed: this.simulationSpeed,
+      events: this.events,
+      stats: {
+          totalCollisions: this.totalCollisions,
+          totalConversions: this.totalConversions,
+          counts,
+          elapsedTime,
+          arenaShape: this.shape
+      }
     });
   }
 }

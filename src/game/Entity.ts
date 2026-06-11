@@ -12,6 +12,9 @@ export class Entity implements EntityData {
 
   private readonly minSpeed = 1.5;
   private readonly maxSpeed = 3.5;
+  private rotation = 0;
+  private floatOffset = 0;
+  private floatSpeed = Math.random() * 0.05 + 0.02;
 
   constructor(data: EntityData) {
     this.id = data.id;
@@ -24,17 +27,24 @@ export class Entity implements EntityData {
     this.constrainSpeed();
   }
 
-  update(arena: ArenaDimensions) {
+  update(arena: ArenaDimensions, speedMultiplier: number = 1) {
     // Move
-    this.x += this.velocityX;
-    this.y += this.velocityY;
+    this.x += this.velocityX * speedMultiplier;
+    this.y += this.velocityY * speedMultiplier;
+
+    // Animations
+    this.floatOffset += this.floatSpeed * speedMultiplier;
+
+    // Slight rotation based on movement
+    const targetRotation = Math.atan2(this.velocityY, this.velocityX);
+    // Smoothly interpolate rotation (subtle)
+    this.rotation = targetRotation * 0.2;
   }
 
   constrainSpeed() {
     const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
 
     if (speed === 0) {
-      // Give it a random kick if it's completely stopped
       const angle = Math.random() * Math.PI * 2;
       this.velocityX = Math.cos(angle) * this.minSpeed;
       this.velocityY = Math.sin(angle) * this.minSpeed;
@@ -54,9 +64,17 @@ export class Entity implements EntityData {
 
   draw(ctx: CanvasRenderingContext2D) {
     const emoji = getEmoji(this.type);
+    const floatY = Math.sin(this.floatOffset) * 2;
+
+    ctx.save();
+    ctx.translate(this.x, this.y + floatY);
+    ctx.rotate(this.rotation);
+
     ctx.font = `${this.radius * 2}px serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(emoji, this.x, this.y);
+    ctx.fillText(emoji, 0, 0);
+
+    ctx.restore();
   }
 }
