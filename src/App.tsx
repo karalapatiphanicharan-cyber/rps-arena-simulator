@@ -759,6 +759,15 @@ function App() {
             </div>
           </div>
           <div className="arena-container">
+            {gameState.status === 'idle' && (
+              <div className="empty-arena-overlay">
+                <div className="empty-message">
+                  <span className="empty-icon">🎮</span>
+                  <h2>Ready To Battle</h2>
+                  <p>Configure your simulation and press <strong>Start Battle</strong>.</p>
+                </div>
+              </div>
+            )}
             <canvas
               ref={canvasRef}
               width={ARENA_WIDTH}
