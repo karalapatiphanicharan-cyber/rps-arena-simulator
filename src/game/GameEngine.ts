@@ -8,7 +8,10 @@ import type {
   BattleEvent,
   GameStats,
   GameState,
-  CrazyEventName
+  CrazyEventName,
+  Obstacle,
+  PowerZone,
+  ObstacleDensity
 } from '../types/game';
 import { checkCollision, resolveCollision } from './Collision';
 import { getWinningType } from './Rules';
@@ -25,6 +28,10 @@ export class GameEngine {
   private animationId: number | null = null;
   private status: GameStatus = 'idle';
   private simulationSpeed: number = 1;
+  private obstacleDensity: ObstacleDensity = 'off';
+  private powerZonesEnabled: boolean = false;
+  private obstacles: Obstacle[] = [];
+  private powerZones: PowerZone[] = [];
 
   private effectManager = new EffectManager();
   private particleManager: ParticleManager;
@@ -32,6 +39,10 @@ export class GameEngine {
 
   private totalCollisions = 0;
   private totalConversions = 0;
+  private obstacleCollisions = 0;
+  private speedZoneVisits = 0;
+  private slowZoneVisits = 0;
+  private chaosZoneVisits = 0;
   private events: BattleEvent[] = [];
   private startTime: number = 0;
   private elapsedAtPause: number = 0;
@@ -59,6 +70,18 @@ export class GameEngine {
   setSimulationSpeed(speed: number) {
     this.simulationSpeed = speed;
     this.notifyState(null, true);
+  }
+
+  setObstacles(density: ObstacleDensity) {
+      this.obstacleDensity = density;
+      this.generateArenaFeatures();
+      this.notifyState(null, true);
+  }
+
+  setPowerZones(enabled: boolean) {
+      this.powerZonesEnabled = enabled;
+      this.generateArenaFeatures();
+      this.notifyState(null, true);
   }
 
   setCrazyMode(enabled: boolean) {
@@ -139,7 +162,12 @@ export class GameEngine {
     this.entities = [];
     this.totalCollisions = 0;
     this.totalConversions = 0;
+    this.obstacleCollisions = 0;
+    this.speedZoneVisits = 0;
+    this.slowZoneVisits = 0;
+    this.chaosZoneVisits = 0;
     this.events = [];
+    this.generateArenaFeatures();
     this.effectManager.clear();
     this.crazyEventManager.reset(this.crazyEventManager.getState().enabled);
     this.startTime = Date.now();
@@ -235,6 +263,59 @@ export class GameEngine {
     this.elapsedAtPause = 0;
     this.draw();
     this.notifyState(null, true);
+  }
+
+  private generateArenaFeatures() {
+    this.obstacles = [];
+    this.powerZones = [];
+
+    if (this.obstacleDensity !== 'off') {
+        const count = this.obstacleDensity === 'low' ? 2 : (this.obstacleDensity === 'medium' ? 4 : 6);
+        for (let i = 0; i < count; i++) {
+            let x, y, obstacle: Obstacle;
+            let attempts = 0;
+            const type = (['wall', 'boulder', 'moving'] as const)[Math.floor(Math.random() * 3)];
+
+            do {
+                x = 100 + Math.random() * (this.arena.width - 200);
+                y = 100 + Math.random() * (this.arena.height - 200);
+                if (type === 'wall') {
+                    obstacle = { id: `obs-${i}`, type, x, y, width: 40 + Math.random() * 60, height: 20 + Math.random() * 30 };
+                } else if (type === 'boulder') {
+                    obstacle = { id: `obs-${i}`, type, x, y, radius: 20 + Math.random() * 20 };
+                } else {
+                    obstacle = { id: `obs-${i}`, type, x, y, radius: 25, velocityX: (Math.random() - 0.5) * 2, velocityY: (Math.random() - 0.5) * 2 };
+                }
+                attempts++;
+            } while (!this.isPositionClear(x, y, 50) && attempts < 50);
+
+            this.obstacles.push(obstacle);
+        }
+    }
+
+    if (this.powerZonesEnabled) {
+        const types = ['speed', 'slow', 'chaos'] as const;
+        types.forEach((type, i) => {
+            let x, y;
+            let attempts = 0;
+            do {
+                x = 100 + Math.random() * (this.arena.width - 200);
+                y = 100 + Math.random() * (this.arena.height - 200);
+                attempts++;
+            } while (!this.isPositionClear(x, y, 60) && attempts < 50);
+            this.powerZones.push({ id: `zone-${i}`, type, x, y, radius: 50 + Math.random() * 30 });
+        });
+    }
+  }
+
+  private isPositionClear(x: number, y: number, radius: number): boolean {
+      if (!this.isInside(x, y, radius)) return false;
+      for (const obs of this.obstacles) {
+          const dx = x - obs.x;
+          const dy = y - obs.y;
+          if (Math.sqrt(dx * dx + dy * dy) < radius + (obs.radius || 40)) return false;
+      }
+      return true;
   }
 
   private update() {
@@ -346,10 +427,48 @@ export class GameEngine {
     this.particleManager.update(sm);
     this.effectManager.update();
 
+    // Update moving obstacles
+    this.obstacles.forEach(obs => {
+        if (obs.type === 'moving' && obs.velocityX !== undefined && obs.velocityY !== undefined) {
+            obs.x += obs.velocityX * speedMult;
+            obs.y += obs.velocityY * speedMult;
+            if (!this.isInside(obs.x, obs.y, obs.radius || 0)) {
+                obs.velocityX *= -1;
+                obs.velocityY *= -1;
+            }
+        }
+    });
+
     this.entities.forEach((entity) => {
         const oldX = entity.x;
         const oldY = entity.y;
-        entity.update(this.arena, speedMult);
+
+        // Power Zone logic
+        let entitySpeedMult = speedMult;
+        this.powerZones.forEach(zone => {
+            const dx = entity.x - zone.x;
+            const dy = entity.y - zone.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < zone.radius) {
+                if (zone.type === 'speed') {
+                    entitySpeedMult *= 1.5;
+                    if (Math.random() < 0.05) this.speedZoneVisits++;
+                } else if (zone.type === 'slow') {
+                    entitySpeedMult *= 0.7;
+                    if (Math.random() < 0.05) this.slowZoneVisits++;
+                } else if (zone.type === 'chaos') {
+                    if (Math.random() < 0.016) { // Approx once per second at 60fps
+                        const angle = Math.random() * Math.PI * 2;
+                        const speed = Math.sqrt(entity.velocityX**2 + entity.velocityY**2);
+                        entity.velocityX = Math.cos(angle) * speed;
+                        entity.velocityY = Math.sin(angle) * speed;
+                        this.chaosZoneVisits++;
+                    }
+                }
+            }
+        });
+
+        entity.update(this.arena, entitySpeedMult);
 
         if (!this.isInside(entity.x, entity.y, entity.radius)) {
             const nx = this.getNormalX(entity.x, entity.y);
@@ -362,6 +481,46 @@ export class GameEngine {
             entity.x += nx * 2;
             entity.y += ny * 2;
         }
+
+        // Obstacle collisions
+        this.obstacles.forEach(obs => {
+            if (obs.type === 'wall' && obs.width !== undefined && obs.height !== undefined) {
+                if (entity.x + entity.radius > obs.x - obs.width/2 &&
+                    entity.x - entity.radius < obs.x + obs.width/2 &&
+                    entity.y + entity.radius > obs.y - obs.height/2 &&
+                    entity.y - entity.radius < obs.y + obs.height/2) {
+
+                    const dx = entity.x - obs.x;
+                    const dy = entity.y - obs.y;
+                    if (Math.abs(dx / obs.width) > Math.abs(dy / obs.height)) {
+                        entity.velocityX *= -1;
+                        entity.x = oldX + entity.velocityX;
+                    } else {
+                        entity.velocityY *= -1;
+                        entity.y = oldY + entity.velocityY;
+                    }
+                    this.obstacleCollisions++;
+                    soundManager.playCollision();
+                }
+            } else if ((obs.type === 'boulder' || obs.type === 'moving') && obs.radius !== undefined) {
+                const dx = entity.x - obs.x;
+                const dy = entity.y - obs.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < entity.radius + obs.radius) {
+                    const nx = dx / dist;
+                    const ny = dy / dist;
+                    const dot = entity.velocityX * nx + entity.velocityY * ny;
+                    if (dot < 0) {
+                        entity.velocityX -= 2 * dot * nx;
+                        entity.velocityY -= 2 * dot * ny;
+                        entity.x = oldX + entity.velocityX;
+                        entity.y = oldY + entity.velocityY;
+                        this.obstacleCollisions++;
+                        soundManager.playCollision();
+                    }
+                }
+            }
+        });
     });
 
     for (let i = 0; i < this.entities.length; i++) {
@@ -382,8 +541,6 @@ export class GameEngine {
           });
 
           resolveCollision(e1, e2);
-          const oldType1 = e1.type;
-          const oldType2 = e2.type;
           let winnerType = getWinningType(e1.type, e2.type);
 
           if (ruleReversed && winnerType) {
@@ -551,6 +708,42 @@ export class GameEngine {
     }
     this.ctx.restore();
 
+    // Draw Power Zones
+    this.powerZones.forEach(zone => {
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+        const color = zone.type === 'speed' ? '#FACC1533' : (zone.type === 'slow' ? '#3B82F633' : '#A855F733');
+        const borderColor = zone.type === 'speed' ? '#FACC15' : (zone.type === 'slow' ? '#3B82F6' : '#A855F7');
+        this.ctx.fillStyle = color;
+        this.ctx.strokeStyle = borderColor;
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([5, 5]);
+        this.ctx.lineDashOffset = Date.now() / 50;
+        this.ctx.fill();
+        this.ctx.stroke();
+        this.ctx.restore();
+    });
+
+    // Draw Obstacles
+    this.obstacles.forEach(obs => {
+        this.ctx.save();
+        this.ctx.fillStyle = '#4B5563';
+        this.ctx.strokeStyle = '#94A3B8';
+        this.ctx.lineWidth = 2;
+        if (obs.type === 'wall' && obs.width && obs.height) {
+            this.ctx.translate(obs.x, obs.y);
+            this.ctx.fillRect(-obs.width/2, -obs.height/2, obs.width, obs.height);
+            this.ctx.strokeRect(-obs.width/2, -obs.height/2, obs.width, obs.height);
+        } else if (obs.radius) {
+            this.ctx.beginPath();
+            this.ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.stroke();
+        }
+        this.ctx.restore();
+    });
+
     this.entities.forEach((entity) => entity.draw(this.ctx));
     this.effectManager.draw(this.ctx);
   }
@@ -605,10 +798,16 @@ export class GameEngine {
           counts,
           elapsedTime,
           arenaShape: this.shape,
-          crazyMode: crazyState.stats
+          crazyMode: crazyState.stats,
+          obstacleCollisions: this.obstacleCollisions,
+          speedZoneVisits: this.speedZoneVisits,
+          slowZoneVisits: this.slowZoneVisits,
+          chaosZoneVisits: this.chaosZoneVisits
       },
       tournament: {} as any, // Placeholder, App.tsx handles this
-      crazyMode: crazyState
+      crazyMode: crazyState,
+      obstacles: this.obstacleDensity,
+      powerZones: this.powerZonesEnabled
     });
   }
 }

@@ -7,7 +7,8 @@ import type {
     GameState,
     TournamentType,
     TournamentState,
-    CrazyEventName
+    CrazyEventName,
+    ObstacleDensity
 } from './types/game';
 import { GameEngine } from './game/GameEngine';
 import { TournamentManager } from './game/TournamentManager';
@@ -36,9 +37,9 @@ function App() {
   const [showRightDrawer, setShowRightDrawer] = useState(false);
 
   const [counts, setCounts] = useState<GameCounts>({
-    rock: 30,
-    paper: 30,
-    scissors: 30,
+    rock: 10,
+    paper: 10,
+    scissors: 10,
   });
 
   const [playerNames, setPlayerNames] = useState<PlayerNames>({
@@ -55,6 +56,8 @@ function App() {
     TournamentManager.getInitialState('single')
   );
   const [crazyMode, setCrazyMode] = useState(false);
+  const [obstacles, setObstacles] = useState<ObstacleDensity>('off');
+  const [powerZones, setPowerZones] = useState(false);
 
   useEffect(() => {
     soundManager.setEnabled(!isMuted);
@@ -72,9 +75,15 @@ function App() {
         totalConversions: 0,
         counts: { rock: 0, paper: 0, scissors: 0 },
         elapsedTime: 0,
-        arenaShape: 'rectangle'
+        arenaShape: 'rectangle',
+        obstacleCollisions: 0,
+        speedZoneVisits: 0,
+        slowZoneVisits: 0,
+        chaosZoneVisits: 0
     },
     tournament: tournamentState,
+    obstacles: 'off',
+    powerZones: false,
     crazyMode: {
         enabled: false,
         activeEvent: null,
@@ -173,6 +182,20 @@ function App() {
       }
   };
 
+  const handleObstaclesChange = (density: ObstacleDensity) => {
+      setObstacles(density);
+      if (engineRef.current) {
+          engineRef.current.setObstacles(density);
+      }
+  };
+
+  const handlePowerZonesToggle = (enabled: boolean) => {
+      setPowerZones(enabled);
+      if (engineRef.current) {
+          engineRef.current.setPowerZones(enabled);
+      }
+  };
+
   const handleTriggerCrazyEvent = (name: CrazyEventName) => {
       if (engineRef.current) {
           engineRef.current.triggerCrazyEvent(name);
@@ -247,6 +270,10 @@ function App() {
             onResetTournament={handleResetTournament}
             crazyMode={crazyMode}
             onCrazyModeToggle={handleCrazyModeToggle}
+            obstacles={obstacles}
+            onObstaclesChange={handleObstaclesChange}
+            powerZones={powerZones}
+            onPowerZonesToggle={handlePowerZonesToggle}
           />
 
           <CollapsibleSection title="Tournament Info" defaultExpanded={tournamentState.type !== 'single'} icon="🏁">

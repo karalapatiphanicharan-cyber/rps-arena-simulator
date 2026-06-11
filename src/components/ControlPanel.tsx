@@ -1,5 +1,5 @@
 import React from 'react';
-import type { GameCounts, PlayerNames, GameStatus, ArenaShape, TournamentType } from '../types/game';
+import type { GameCounts, PlayerNames, GameStatus, ArenaShape, TournamentType, ObstacleDensity } from '../types/game';
 import CollapsibleSection from './CollapsibleSection';
 
 interface ControlPanelProps {
@@ -19,6 +19,10 @@ interface ControlPanelProps {
   onResetTournament: () => void;
   crazyMode: boolean;
   onCrazyModeToggle: (enabled: boolean) => void;
+  obstacles: ObstacleDensity;
+  onObstaclesChange: (density: ObstacleDensity) => void;
+  powerZones: boolean;
+  onPowerZonesToggle: (enabled: boolean) => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -38,6 +42,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onResetTournament,
   crazyMode,
   onCrazyModeToggle,
+  obstacles,
+  onObstaclesChange,
+  powerZones,
+  onPowerZonesToggle,
 }) => {
   const handleCountChange = (type: keyof GameCounts, value: string) => {
     const numValue = parseInt(value) || 0;
@@ -106,6 +114,37 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       <CollapsibleSection title="Arena Settings" defaultExpanded={false} icon="🏟️">
         <div className="section">
+          <div className="input-group">
+            <label>Obstacles</label>
+            <select
+              value={obstacles}
+              onChange={(e) => onObstaclesChange(e.target.value as ObstacleDensity)}
+              className="modern-select"
+              disabled={status === 'running' || status === 'paused'}
+            >
+              <option value="off">OFF</option>
+              <option value="low">LOW</option>
+              <option value="medium">MEDIUM</option>
+              <option value="high">HIGH</option>
+            </select>
+          </div>
+
+          <div className="input-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', marginTop: '1rem' }}>
+            <label style={{ margin: 0 }}>Power Zones</label>
+            <button
+              onClick={() => onPowerZonesToggle(!powerZones)}
+              className="btn"
+              style={{
+                  background: powerZones ? '#A855F7' : '#374151',
+                  padding: '0.4rem 1rem',
+                  minWidth: '80px'
+              }}
+              disabled={status === 'running' || status === 'paused'}
+            >
+              {powerZones ? 'ON' : 'OFF'}
+            </button>
+          </div>
+
           <div className="input-group">
             <label>Arena Shape</label>
             <select

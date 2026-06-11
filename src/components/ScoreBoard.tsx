@@ -10,7 +10,10 @@ interface ScoreBoardProps {
 }
 
 const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament }) => {
-  const { counts, elapsedTime, arenaShape, totalCollisions, totalConversions, crazyMode } = stats;
+  const {
+    counts, elapsedTime, arenaShape, totalCollisions, totalConversions, crazyMode,
+    obstacleCollisions, speedZoneVisits, slowZoneVisits, chaosZoneVisits
+  } = stats;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -77,6 +80,10 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
             <span className="stat-value">{totalConversions}</span>
           </div>
           <div className="stat-item">
+            <span className="stat-label">Obstacle Collisions</span>
+            <span className="stat-value">{obstacleCollisions}</span>
+          </div>
+          <div className="stat-item">
             <span className="stat-label">Elapsed Time</span>
             <span className="stat-value">{formatTime(elapsedTime)}</span>
           </div>
@@ -87,6 +94,10 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
           <div className="stat-item">
             <span className="stat-label">Arena Shape</span>
             <span className="stat-value">{capitalize(arenaShape)}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">Zone Visits (Sp/Sl/Ch)</span>
+            <span className="stat-value">{speedZoneVisits} / {slowZoneVisits} / {chaosZoneVisits}</span>
           </div>
         </div>
       </CollapsibleSection>

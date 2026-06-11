@@ -32,7 +32,7 @@ export class Entity implements EntityData {
     this.constrainSpeed();
   }
 
-  update(arena: ArenaDimensions, speedMultiplier: number = 1) {
+  update(_arena: ArenaDimensions, speedMultiplier: number = 1) {
     if (this.frozen) return;
 
     // Giant logic
