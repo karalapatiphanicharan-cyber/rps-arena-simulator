@@ -1,19 +1,18 @@
 import React from 'react';
-import type { GameCounts, PlayerNames, EntityType, ArenaShape } from '../types/game';
+import type { GameCounts, PlayerNames, EntityType, GameStats } from '../types/game';
 import { getEmoji } from '../game/Rules';
 
 interface ScoreBoardProps {
-  counts: GameCounts;
   playerNames: PlayerNames;
-  elapsedTime: number;
-  totalEntities: number;
-  arenaShape: ArenaShape;
+  stats: GameStats;
 }
 
-const ScoreBoard: React.FC<ScoreBoardProps> = ({ counts, playerNames, elapsedTime, totalEntities, arenaShape }) => {
+const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats }) => {
+  const { counts, elapsedTime, arenaShape, totalCollisions, totalConversions } = stats;
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -70,8 +69,12 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ counts, playerNames, elapsedTim
         <h2 className="section-title">📈 Statistics</h2>
         <div className="stats-grid">
           <div className="stat-item">
-            <span className="stat-label">Total Entities</span>
-            <span className="stat-value">{totalEntities}</span>
+            <span className="stat-label">Total Collisions</span>
+            <span className="stat-value">{totalCollisions}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">Total Conversions</span>
+            <span className="stat-value">{totalConversions}</span>
           </div>
           <div className="stat-item">
             <span className="stat-label">Elapsed Time</span>

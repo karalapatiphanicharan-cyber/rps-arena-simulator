@@ -6,9 +6,11 @@ interface ControlPanelProps {
   playerNames: PlayerNames;
   status: GameStatus;
   arenaShape: ArenaShape;
+  simulationSpeed: number;
   onCountsChange: (counts: GameCounts) => void;
   onNamesChange: (names: PlayerNames) => void;
   onShapeChange: (shape: ArenaShape) => void;
+  onSpeedChange: (speed: number) => void;
   onStart: () => void;
   onReset: () => void;
 }
@@ -18,9 +20,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   playerNames,
   status,
   arenaShape,
+  simulationSpeed,
   onCountsChange,
   onNamesChange,
   onShapeChange,
+  onSpeedChange,
   onStart,
   onReset,
 }) => {
@@ -33,7 +37,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     onNamesChange({ ...playerNames, [type]: value });
   };
 
-  const isRunning = status === 'running';
+  const isRunning = status === 'running' || status === 'paused';
 
   return (
     <div className="card control-panel">
@@ -46,7 +50,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <select
             value={arenaShape}
             onChange={(e) => onShapeChange(e.target.value as ArenaShape)}
-            disabled={isRunning}
+            disabled={status === 'running' || status === 'paused'}
             style={{
                 width: '100%',
                 background: '#111827',
@@ -62,6 +66,28 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <option value="circle">Circle</option>
             <option value="triangle">Triangle</option>
             <option value="hexagon">Hexagon</option>
+          </select>
+        </div>
+
+        <div className="input-group" style={{ marginTop: '1rem' }}>
+          <label>Simulation Speed</label>
+          <select
+            value={simulationSpeed}
+            onChange={(e) => onSpeedChange(Number(e.target.value))}
+            style={{
+                width: '100%',
+                background: '#111827',
+                border: '1px solid var(--border-color)',
+                borderRadius: '0.5rem',
+                padding: '0.625rem 0.875rem',
+                color: 'white',
+                fontSize: '0.875rem'
+            }}
+          >
+            <option value="0.5">0.5x</option>
+            <option value="1">1x</option>
+            <option value="2">2x</option>
+            <option value="4">4x</option>
           </select>
         </div>
       </div>
@@ -137,10 +163,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       <div className="button-group">
         <button
           onClick={onStart}
-          disabled={isRunning}
+          disabled={status === 'running' || status === 'paused'}
           className="btn btn-start"
         >
-          {status === 'finished' ? 'Start New Battle' : 'Start Battle'}
+          Start Battle
         </button>
         <button onClick={onReset} className="btn btn-reset">
           Reset Arena
