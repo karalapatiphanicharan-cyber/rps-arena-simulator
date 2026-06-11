@@ -1,5 +1,5 @@
 import React from 'react';
-import type { GameCounts, PlayerNames, EntityType } from '../types/game';
+import type { GameCounts, PlayerNames, EntityType, ArenaShape } from '../types/game';
 import { getEmoji } from '../game/Rules';
 
 interface ScoreBoardProps {
@@ -7,9 +7,10 @@ interface ScoreBoardProps {
   playerNames: PlayerNames;
   elapsedTime: number;
   totalEntities: number;
+  arenaShape: ArenaShape;
 }
 
-const ScoreBoard: React.FC<ScoreBoardProps> = ({ counts, playerNames, elapsedTime, totalEntities }) => {
+const ScoreBoard: React.FC<ScoreBoardProps> = ({ counts, playerNames, elapsedTime, totalEntities, arenaShape }) => {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -33,6 +34,8 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ counts, playerNames, elapsedTim
     if (max === 0) return 'None';
     return leader;
   };
+
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   return (
     <div className="scoreboard-container">
@@ -77,6 +80,10 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ counts, playerNames, elapsedTim
           <div className="stat-item">
             <span className="stat-label">Current Leader</span>
             <span className="stat-value">{getLeader()}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">Arena Shape</span>
+            <span className="stat-value">{capitalize(arenaShape)}</span>
           </div>
         </div>
       </div>
