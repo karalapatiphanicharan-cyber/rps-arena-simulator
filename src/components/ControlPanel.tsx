@@ -16,6 +16,8 @@ interface ControlPanelProps {
   onStart: () => void;
   onReset: () => void;
   onResetTournament: () => void;
+  crazyMode: boolean;
+  onCrazyModeToggle: (enabled: boolean) => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -33,6 +35,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onStart,
   onReset,
   onResetTournament,
+  crazyMode,
+  onCrazyModeToggle,
 }) => {
   const handleCountChange = (type: keyof GameCounts, value: string) => {
     const numValue = parseInt(value) || 0;
@@ -51,6 +55,22 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       <div className="section">
         <h3 className="section-subtitle" style={{ fontSize: '1rem', color: '#94A3B8', marginBottom: '1rem' }}>Game Mode</h3>
+
+        <div className="input-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <label style={{ margin: 0 }}>Crazy Mode</label>
+          <button
+            onClick={() => onCrazyModeToggle(!crazyMode)}
+            className="btn"
+            style={{
+                background: crazyMode ? '#F97316' : '#374151',
+                padding: '0.4rem 1rem',
+                minWidth: '80px'
+            }}
+          >
+            {crazyMode ? 'ON 🎭' : 'OFF'}
+          </button>
+        </div>
+
         <div className="input-group">
           <label>Tournament Type</label>
           <select

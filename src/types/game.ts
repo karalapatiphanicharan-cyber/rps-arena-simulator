@@ -34,12 +34,47 @@ export interface BattleEvent {
   timestamp: number;
 }
 
+export type CrazyEventName =
+  | 'Speed Boost'
+  | 'Freeze Wave'
+  | 'Double Population'
+  | 'Meteor Strike'
+  | 'Reverse Rules'
+  | 'Giant Entity'
+  | 'Chaos Storm';
+
+export interface CrazyEvent {
+  id: string;
+  name: CrazyEventName;
+  icon: string;
+  color: string;
+  startTime: number;
+  duration: number;
+  data?: any;
+}
+
+export interface CrazyModeStats {
+  eventsTriggered: number;
+  meteorEliminations: number;
+  freezeCount: number;
+  speedBoostActivations: number;
+  ruleReversals: number;
+}
+
+export interface CrazyModeState {
+  enabled: boolean;
+  activeEvent: CrazyEvent | null;
+  history: CrazyEventName[];
+  stats: CrazyModeStats;
+}
+
 export interface GameStats {
   totalCollisions: number;
   totalConversions: number;
   counts: GameCounts;
   elapsedTime: number;
   arenaShape: ArenaShape;
+  crazyMode?: CrazyModeStats;
 }
 
 export type TournamentType = 'single' | 'bo3' | 'bo5' | 'bo7';
@@ -76,6 +111,7 @@ export interface GameState {
   events: BattleEvent[];
   simulationSpeed: number;
   tournament: TournamentState;
+  crazyMode: CrazyModeState;
 }
 
 export interface ArenaDimensions {
@@ -87,8 +123,9 @@ export interface VisualEffect {
   id: string;
   x: number;
   y: number;
-  type: 'collision' | 'conversion';
+  type: 'collision' | 'conversion' | 'explosion' | 'meteor_warning';
   startTime: number;
   duration: number;
   color?: string;
+  radius?: number;
 }

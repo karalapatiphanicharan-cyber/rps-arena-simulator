@@ -19,6 +19,8 @@ import ProgressIndicator from './components/ProgressIndicator';
 import BattleFeed from './components/BattleFeed';
 import TournamentDashboard from './components/TournamentDashboard';
 import MatchHistory from './components/MatchHistory';
+import CrazyEventBanner from './components/CrazyEventBanner';
+import CrazyEventHistory from './components/CrazyEventHistory';
 import { soundManager } from './game/SoundManager';
 
 const ARENA_WIDTH = 1000;
@@ -48,6 +50,7 @@ function App() {
   const [tournamentState, setTournamentState] = useState<TournamentState>(
     TournamentManager.getInitialState('single')
   );
+  const [crazyMode, setCrazyMode] = useState(false);
 
   useEffect(() => {
     soundManager.setEnabled(!isMuted);
@@ -67,7 +70,19 @@ function App() {
         elapsedTime: 0,
         arenaShape: 'rectangle'
     },
-    tournament: tournamentState
+    tournament: tournamentState,
+    crazyMode: {
+        enabled: false,
+        activeEvent: null,
+        history: [],
+        stats: {
+            eventsTriggered: 0,
+            meteorEliminations: 0,
+            freezeCount: 0,
+            speedBoostActivations: 0,
+            ruleReversals: 0
+        }
+    }
   });
 
   const handleStateChange = useCallback((state: GameState) => {
@@ -147,6 +162,13 @@ function App() {
       }
   };
 
+  const handleCrazyModeToggle = (enabled: boolean) => {
+      setCrazyMode(enabled);
+      if (engineRef.current) {
+          engineRef.current.setCrazyMode(enabled);
+      }
+  };
+
   const handleTournamentTypeChange = (type: TournamentType) => {
       setTournamentType(type);
       const newState = TournamentManager.getInitialState(type);
@@ -204,8 +226,11 @@ function App() {
             onStart={handleStart}
             onReset={handleReset}
             onResetTournament={handleResetTournament}
+            crazyMode={crazyMode}
+            onCrazyModeToggle={handleCrazyModeToggle}
           />
           <TournamentDashboard state={tournamentState} playerNames={playerNames} />
+          <CrazyEventHistory history={gameState.crazyMode.history} />
 
           <div className="card" style={{ marginTop: '1rem' }}>
               <button
@@ -267,6 +292,7 @@ function App() {
             </div>
           </div>
           <div className="arena-container">
+            <CrazyEventBanner event={gameState.crazyMode.activeEvent} />
             <canvas
               ref={canvasRef}
               width={ARENA_WIDTH}

@@ -14,6 +14,7 @@ import { getWinningType } from './Rules';
 import { EffectManager } from './EffectManager';
 import { ParticleManager } from './ParticleManager';
 import { soundManager } from './SoundManager';
+import { CrazyEventManager } from './CrazyEventManager';
 
 export class GameEngine {
   private entities: Entity[] = [];
@@ -26,6 +27,7 @@ export class GameEngine {
 
   private effectManager = new EffectManager();
   private particleManager: ParticleManager;
+  private crazyEventManager = new CrazyEventManager();
 
   private totalCollisions = 0;
   private totalConversions = 0;
@@ -54,6 +56,11 @@ export class GameEngine {
   setSimulationSpeed(speed: number) {
     this.simulationSpeed = speed;
     this.notifyState();
+  }
+
+  setCrazyMode(enabled: boolean) {
+      this.crazyEventManager.setEnabled(enabled);
+      this.notifyState();
   }
 
   private isInside(x: number, y: number, radius: number): boolean {
@@ -124,6 +131,7 @@ export class GameEngine {
     this.totalConversions = 0;
     this.events = [];
     this.effectManager.clear();
+    this.crazyEventManager.reset(this.crazyEventManager.getState().enabled);
     this.startTime = Date.now();
     this.elapsedAtPause = 0;
 
@@ -221,6 +229,104 @@ export class GameEngine {
 
   private update() {
     const sm = this.simulationSpeed;
+    const activeEvent = this.crazyEventManager.update();
+    let speedMult = sm;
+    let ruleReversed = false;
+
+    if (activeEvent) {
+        if (activeEvent.name === 'Speed Boost') speedMult *= 2;
+        if (activeEvent.name === 'Reverse Rules') ruleReversed = true;
+
+        if (activeEvent.name === 'Freeze Wave' && !activeEvent.data?.applied) {
+            let frozenCount = 0;
+            this.entities.forEach(e => {
+                if (Math.random() < 0.25) {
+                    e.frozen = true;
+                    frozenCount++;
+                }
+            });
+            activeEvent.data = { applied: true };
+            this.crazyEventManager.addFreezeCount(frozenCount);
+        }
+
+        if (activeEvent.name === 'Chaos Storm' && !activeEvent.data?.applied) {
+            this.entities.forEach(e => {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.sqrt(e.velocityX**2 + e.velocityY**2);
+                e.velocityX = Math.cos(angle) * speed;
+                e.velocityY = Math.sin(angle) * speed;
+            });
+            activeEvent.data = { applied: true };
+        }
+
+        if (activeEvent.name === 'Double Population' && !activeEvent.data?.applied) {
+            const type = activeEvent.data.type as EntityType;
+            const toDuplicate = this.entities.filter(e => e.type === type);
+            const count = Math.floor(toDuplicate.length * 0.2);
+            for(let i=0; i<count; i++) {
+                const source = toDuplicate[Math.floor(Math.random() * toDuplicate.length)];
+                this.entities.push(new Entity({
+                    ...source,
+                    id: `${type}-dup-${Date.now()}-${i}`
+                }));
+            }
+            activeEvent.data.applied = true;
+        }
+
+        if (activeEvent.name === 'Giant Entity' && !activeEvent.data?.targetId) {
+            const target = this.entities[Math.floor(Math.random() * this.entities.length)];
+            if (target) {
+                target.isGiant = true;
+                activeEvent.data.targetId = target.id;
+            }
+        }
+
+        if (activeEvent.name === 'Meteor Strike') {
+            const { x, y, radius, warningDuration, impacted } = activeEvent.data;
+            const targetX = x * this.arena.width;
+            const targetY = y * this.arena.height;
+
+            if (!impacted && Date.now() - activeEvent.startTime > warningDuration) {
+                const beforeCount = this.entities.length;
+                this.entities = this.entities.filter(e => {
+                    const dx = e.x - targetX;
+                    const dy = e.y - targetY;
+                    return Math.sqrt(dx*dx + dy*dy) > radius;
+                });
+                this.crazyEventManager.addMeteorEliminations(beforeCount - this.entities.length);
+                activeEvent.data.impacted = true;
+                this.effectManager.addEffect({
+                    id: `meteor-expl-${Date.now()}`,
+                    x: targetX,
+                    y: targetY,
+                    type: 'explosion',
+                    startTime: Date.now(),
+                    duration: 1000,
+                    radius: radius
+                });
+                soundManager.playWinner(); // Using winner sound as explosion placeholder
+            } else if (!impacted) {
+                // Add warning effect periodically
+                if (Math.random() < 0.1) {
+                    this.effectManager.addEffect({
+                        id: `meteor-warn-${Date.now()}`,
+                        x: targetX,
+                        y: targetY,
+                        type: 'meteor_warning',
+                        startTime: Date.now(),
+                        duration: 500,
+                        radius: radius
+                    });
+                }
+            }
+        }
+    } else {
+        // Reset effects if no event is active
+        this.entities.forEach(e => {
+            e.frozen = false;
+            e.isGiant = false;
+        });
+    }
 
     this.particleManager.update(sm);
     this.effectManager.update();
@@ -228,7 +334,7 @@ export class GameEngine {
     this.entities.forEach((entity) => {
         const oldX = entity.x;
         const oldY = entity.y;
-        entity.update(this.arena, sm);
+        entity.update(this.arena, speedMult);
 
         if (!this.isInside(entity.x, entity.y, entity.radius)) {
             const nx = this.getNormalX(entity.x, entity.y);
@@ -263,7 +369,11 @@ export class GameEngine {
           resolveCollision(e1, e2);
           const oldType1 = e1.type;
           const oldType2 = e2.type;
-          const winnerType = getWinningType(e1.type, e2.type);
+          let winnerType = getWinningType(e1.type, e2.type);
+
+          if (ruleReversed && winnerType) {
+              winnerType = winnerType === e1.type ? e2.type : e1.type;
+          }
 
           if (winnerType) {
             if (e1.type !== winnerType || e2.type !== winnerType) {
@@ -459,6 +569,7 @@ export class GameEngine {
     const elapsedTime = this.status === 'paused'
         ? this.elapsedAtPause
         : (Date.now() - this.startTime) / 1000;
+    const crazyState = this.crazyEventManager.getState();
 
     this.onStateChange({
       counts,
@@ -472,8 +583,11 @@ export class GameEngine {
           totalConversions: this.totalConversions,
           counts,
           elapsedTime,
-          arenaShape: this.shape
-      }
+          arenaShape: this.shape,
+          crazyMode: crazyState.stats
+      },
+      tournament: {} as any, // Placeholder, App.tsx handles this
+      crazyMode: crazyState
     });
   }
 }
