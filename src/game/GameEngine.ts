@@ -33,6 +33,7 @@ export class GameEngine {
   private powerZones: PowerZone[] = [];
   private manualObstacles: Obstacle[] = [];
   private manualPowerZones: PowerZone[] = [];
+  private hoveredObject: { type: 'obstacle' | 'zone', id: string } | null = null;
 
   private effectManager = new EffectManager();
   private particleManager: ParticleManager;
@@ -106,22 +107,68 @@ export class GameEngine {
   }
 
   getObjectAt(x: number, y: number): { type: 'obstacle' | 'zone', id: string } | null {
+      let closest: { type: 'obstacle' | 'zone', id: string, dist: number } | null = null;
+
+      const updateClosest = (type: 'obstacle' | 'zone', id: string, dist: number) => {
+          if (!closest || dist < closest.dist) {
+              closest = { type, id, dist };
+          }
+      };
+
       for (const obs of this.manualObstacles) {
           if (obs.type === 'wall' && obs.width && obs.height) {
               if (x > obs.x - obs.width/2 && x < obs.x + obs.width/2 &&
-                  y > obs.y - obs.height/2 && y < obs.y + obs.height/2) return { type: 'obstacle', id: obs.id };
+                  y > obs.y - obs.height/2 && y < obs.y + obs.height/2) {
+                  const dx = x - obs.x;
+                  const dy = y - obs.y;
+                  updateClosest('obstacle', obs.id, Math.sqrt(dx*dx + dy*dy));
+              }
           } else if (obs.radius) {
               const dx = x - obs.x;
               const dy = y - obs.y;
-              if (Math.sqrt(dx*dx + dy*dy) < obs.radius) return { type: 'obstacle', id: obs.id };
+              const dist = Math.sqrt(dx*dx + dy*dy);
+              if (dist < obs.radius) {
+                  updateClosest('obstacle', obs.id, dist);
+              }
           }
       }
+
       for (const zone of this.manualPowerZones) {
           const dx = x - zone.x;
           const dy = y - zone.y;
-          if (Math.sqrt(dx*dx + dy*dy) < zone.radius) return { type: 'zone', id: zone.id };
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < zone.radius) {
+              updateClosest('zone', zone.id, dist);
+          }
       }
-      return null;
+
+      return closest ? { type: closest.type, id: closest.id } : null;
+  }
+
+  updateHover(x: number, y: number) {
+      const obj = this.getObjectAt(x, y);
+      if (obj?.id !== this.hoveredObject?.id) {
+          this.hoveredObject = obj;
+          if (this.status !== 'running') {
+              this.draw();
+          }
+      }
+  }
+
+  removeObjectAt(x: number, y: number) {
+      const obj = this.getObjectAt(x, y);
+      if (obj) {
+          if (obj.type === 'obstacle') {
+              this.manualObstacles = this.manualObstacles.filter(o => o.id !== obj.id);
+          } else {
+              this.manualPowerZones = this.manualPowerZones.filter(z => z.id !== obj.id);
+          }
+          this.hoveredObject = null;
+          this.draw();
+          this.notifyState(null, true);
+          return true;
+      }
+      return false;
   }
 
   private isInside(x: number, y: number, radius: number): boolean {
@@ -765,14 +812,22 @@ export class GameEngine {
     // Draw Power Zones
     const allZones = [...this.powerZones, ...this.manualPowerZones];
     allZones.forEach(zone => {
+        const isHovered = this.hoveredObject?.type === 'zone' && this.hoveredObject.id === zone.id;
         this.ctx.save();
         this.ctx.beginPath();
         this.ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
         const color = zone.type === 'speed' ? '#FACC1533' : (zone.type === 'slow' ? '#3B82F633' : '#A855F733');
-        const borderColor = zone.type === 'speed' ? '#FACC15' : (zone.type === 'slow' ? '#3B82F6' : '#A855F7');
+        let borderColor = zone.type === 'speed' ? '#FACC15' : (zone.type === 'slow' ? '#3B82F6' : '#A855F7');
+
+        if (isHovered) {
+            borderColor = '#EF4444';
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowColor = '#EF4444';
+        }
+
         this.ctx.fillStyle = color;
         this.ctx.strokeStyle = borderColor;
-        this.ctx.lineWidth = 2;
+        this.ctx.lineWidth = isHovered ? 4 : 2;
         this.ctx.setLineDash([5, 5]);
         this.ctx.lineDashOffset = Date.now() / 50;
         this.ctx.fill();
@@ -783,18 +838,25 @@ export class GameEngine {
     // Draw Obstacles
     const allObs = [...this.obstacles, ...this.manualObstacles];
     allObs.forEach(obs => {
+        const isHovered = this.hoveredObject?.type === 'obstacle' && this.hoveredObject.id === obs.id;
         this.ctx.save();
+
+        if (isHovered) {
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowColor = '#EF4444';
+        }
+
         if (obs.type === 'wall' && obs.width && obs.height) {
             this.ctx.fillStyle = '#4B5563';
-            this.ctx.strokeStyle = '#94A3B8';
-            this.ctx.lineWidth = 2;
+            this.ctx.strokeStyle = isHovered ? '#EF4444' : '#94A3B8';
+            this.ctx.lineWidth = isHovered ? 4 : 2;
             this.ctx.translate(obs.x, obs.y);
             this.ctx.fillRect(-obs.width/2, -obs.height/2, obs.width, obs.height);
             this.ctx.strokeRect(-obs.width/2, -obs.height/2, obs.width, obs.height);
         } else if (obs.type === 'boulder' && obs.radius) {
             this.ctx.fillStyle = '#64748B';
-            this.ctx.strokeStyle = '#94A3B8';
-            this.ctx.lineWidth = 2;
+            this.ctx.strokeStyle = isHovered ? '#EF4444' : '#94A3B8';
+            this.ctx.lineWidth = isHovered ? 4 : 2;
             this.ctx.beginPath();
             this.ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
             this.ctx.fill();
@@ -806,8 +868,8 @@ export class GameEngine {
             this.ctx.fill();
         } else if (obs.type === 'moving' && obs.radius) {
             this.ctx.fillStyle = '#EF4444';
-            this.ctx.strokeStyle = '#F87171';
-            this.ctx.lineWidth = 3;
+            this.ctx.strokeStyle = isHovered ? '#FFFFFF' : '#F87171';
+            this.ctx.lineWidth = isHovered ? 5 : 3;
             this.ctx.beginPath();
             this.ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
             this.ctx.fill();

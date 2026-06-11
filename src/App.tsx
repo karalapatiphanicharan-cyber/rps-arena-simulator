@@ -159,20 +159,15 @@ function App() {
           const rect = canvas.getBoundingClientRect();
           const x = e.clientX - rect.left;
           const y = e.clientY - rect.top;
-          const obj = engineRef.current.getObjectAt(x, y);
-          if (obj) {
-              if (obj.type === 'obstacle') {
-                  engineRef.current.setManualFeatures(
-                      gameState.manualObstacles.filter(o => o.id !== obj.id),
-                      gameState.manualPowerZones
-                  );
-              } else {
-                  engineRef.current.setManualFeatures(
-                      gameState.manualObstacles,
-                      gameState.manualPowerZones.filter(z => z.id !== obj.id)
-                  );
-              }
-          }
+          engineRef.current.removeObjectAt(x, y);
+      };
+
+      const handleMouseMove = (e: MouseEvent) => {
+          if (!engineRef.current) return;
+          const rect = canvas.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          engineRef.current.updateHover(x, y);
       };
 
       const handleClick = (e: MouseEvent) => {
@@ -226,11 +221,13 @@ function App() {
 
       canvas.addEventListener('contextmenu', handleContextMenu);
       canvas.addEventListener('mousedown', handleClick);
+      canvas.addEventListener('mousemove', handleMouseMove);
       return () => {
           canvas.removeEventListener('contextmenu', handleContextMenu);
           canvas.removeEventListener('mousedown', handleClick);
+          canvas.removeEventListener('mousemove', handleMouseMove);
       };
-  }, [gameState.status, gameState.manualObstacles, gameState.manualPowerZones]);
+  }, [gameState.status, gameState.manualObstacles, gameState.manualPowerZones, selectedTool]);
 
   const handleStart = (skipFeatureGeneration: boolean = false) => {
     if (engineRef.current) {
