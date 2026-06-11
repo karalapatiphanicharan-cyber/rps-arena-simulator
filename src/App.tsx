@@ -3,8 +3,6 @@ import './styles.css';
 import type {
     GameCounts,
     PlayerNames,
-    GameStatus,
-    EntityType,
     ArenaShape,
     GameState,
     TournamentType,
@@ -23,6 +21,7 @@ import MatchHistory from './components/MatchHistory';
 import CrazyEventBanner from './components/CrazyEventBanner';
 import CrazyEventHistory from './components/CrazyEventHistory';
 import DevPanel from './components/DevPanel';
+import CollapsibleSection from './components/CollapsibleSection';
 import { soundManager } from './game/SoundManager';
 
 const ARENA_WIDTH = 1000;
@@ -32,6 +31,9 @@ function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<GameEngine | null>(null);
   const nextRoundTimerRef = useRef<number | null>(null);
+
+  const [showLeftDrawer, setShowLeftDrawer] = useState(false);
+  const [showRightDrawer, setShowRightDrawer] = useState(false);
 
   const [counts, setCounts] = useState<GameCounts>({
     rock: 30,
@@ -217,8 +219,17 @@ function App() {
         <p className="subtitle">Real-Time Rock Paper Scissors Battle Simulator</p>
       </header>
 
+      <div className="mobile-drawer-controls">
+        <button className="btn" onClick={() => setShowLeftDrawer(true)}>⚙️ Controls</button>
+        <button className="btn" onClick={() => setShowRightDrawer(true)}>📊 Stats</button>
+      </div>
+
       <main className="main-layout">
-        <aside className="control-panel-column">
+        <aside className={`control-panel-column ${showLeftDrawer ? 'mobile-visible' : ''}`}>
+          <div className="drawer-header">
+            <h3>Game Controls</h3>
+            <button className="close-drawer" onClick={() => setShowLeftDrawer(false)}>×</button>
+          </div>
           <ControlPanel
             counts={counts}
             playerNames={playerNames}
@@ -237,20 +248,33 @@ function App() {
             crazyMode={crazyMode}
             onCrazyModeToggle={handleCrazyModeToggle}
           />
-          <TournamentDashboard state={tournamentState} playerNames={playerNames} />
-          <CrazyEventHistory history={gameState.crazyMode.history} />
-          <DevPanel onTriggerEvent={handleTriggerCrazyEvent} enabled={crazyMode} />
 
-          <div className="card" style={{ marginTop: '1rem' }}>
+          <CollapsibleSection title="Tournament Info" defaultExpanded={tournamentState.type !== 'single'} icon="🏁">
+            <TournamentDashboard state={tournamentState} playerNames={playerNames} />
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Crazy History" defaultExpanded={false} icon="📜">
+            <CrazyEventHistory history={gameState.crazyMode.history} />
+          </CollapsibleSection>
+
+          {crazyMode && (
+            <CollapsibleSection title="Dev Tools" defaultExpanded={false} icon="🛠️">
+              <DevPanel onTriggerEvent={handleTriggerCrazyEvent} enabled={crazyMode} />
+            </CollapsibleSection>
+          )}
+
+          <div className="card mute-card">
               <button
                 onClick={() => setIsMuted(!isMuted)}
-                className="btn"
-                style={{ width: '100%', background: isMuted ? '#4B5563' : '#10B981' }}
+                className="btn mute-btn"
+                style={{ background: isMuted ? '#4B5563' : '#10B981' }}
               >
                 {isMuted ? '🔇 Sound: OFF' : '🔊 Sound: ON'}
               </button>
           </div>
         </aside>
+
+        { (showLeftDrawer || showRightDrawer) && <div className="drawer-overlay" onClick={() => { setShowLeftDrawer(false); setShowRightDrawer(false); }}></div> }
 
         <section className="arena-section">
           {tournamentState.type !== 'single' && (
@@ -268,35 +292,32 @@ function App() {
               </div>
           )}
 
-          <div className="card spectator-controls" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card spectator-controls">
              <button
                 onClick={handleResume}
                 disabled={gameState.status !== 'paused'}
                 className="btn btn-start"
-                style={{ flex: 1 }}
              >
                ▶ Resume
              </button>
              <button
                 onClick={handlePause}
                 disabled={gameState.status !== 'running'}
-                className="btn"
-                style={{ flex: 1, background: '#F59E0B' }}
+                className="btn btn-pause"
              >
                ⏸ Pause
              </button>
              <button
                 onClick={handleRestart}
                 className="btn btn-reset"
-                style={{ flex: 1 }}
              >
                🔄 Restart Round
              </button>
           </div>
 
           <div className="arena-header">
-            <h2 className="section-title">⚔ Battle Arena: {capitalize(arenaShape)}</h2>
-            <div className="stat-badge">
+            <h2 className="section-title arena-title">⚔ Battle Arena: {capitalize(arenaShape)}</h2>
+            <div className="stat-badge arena-stat-badge">
               Total Entities: <strong>{totalEntities}</strong>
             </div>
           </div>
@@ -309,19 +330,29 @@ function App() {
             />
           </div>
 
-          <div className="card" style={{ marginTop: '1rem' }}>
+          <div className="card progress-card">
               <ProgressIndicator counts={currentCounts} />
           </div>
         </section>
 
-        <aside className="scoreboard-column">
+        <aside className={`scoreboard-column ${showRightDrawer ? 'mobile-visible' : ''}`}>
+          <div className="drawer-header">
+            <h3>Live Stats</h3>
+            <button className="close-drawer" onClick={() => setShowRightDrawer(false)}>×</button>
+          </div>
           <ScoreBoard
             playerNames={playerNames}
             stats={gameState.stats}
             tournament={tournamentState}
           />
-          <MatchHistory history={tournamentState.history} playerNames={playerNames} />
-          <BattleFeed events={gameState.events} />
+
+          <CollapsibleSection title="Match History" defaultExpanded={false} icon="📋">
+            <MatchHistory history={tournamentState.history} playerNames={playerNames} />
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Battle Feed" defaultExpanded={false} icon="⚡">
+            <BattleFeed events={gameState.events} />
+          </CollapsibleSection>
         </aside>
       </main>
 
