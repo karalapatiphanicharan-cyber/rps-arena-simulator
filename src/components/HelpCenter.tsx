@@ -7,7 +7,7 @@ const HelpCenter: React.FC = () => {
     {
       title: 'Basic Rules',
       content: [
-        'What it does: Defines the core conversion mechanics of the game.',
+        'Description: Defines the core conversion mechanics of the game.',
         'How it works: When two entities collide, their types are compared. If one type beats the other, the loser is converted to the winner\'s type.',
         'Example: A Rock 🪨 collides with Scissors ✂️.',
         'Expected Result: Scissors becomes Rock 🪨.',
@@ -21,7 +21,7 @@ const HelpCenter: React.FC = () => {
     {
       title: 'Arena Shapes',
       content: [
-        'What it does: Changes the boundaries of the battle arena.',
+        'Description: Changes the boundaries of the battle arena.',
         'How it works: Each shape (Rectangle, Square, Circle, Triangle, Hexagon) has unique boundary logic that affects how entities bounce and cluster.',
         'Example: Switching to Circle shape.',
         'Expected Result: Entities move in a circular boundary, often clustering towards the center.',
@@ -35,17 +35,17 @@ const HelpCenter: React.FC = () => {
     {
       title: 'Tournament Mode',
       content: [
-        'What it does: Organizes battles into a series of rounds.',
-        'How it works: Tracks wins across matches (Best of 3, 5, or 7). The first type to reach the required wins is crowned Champion.',
-        'Example: Best of 3 (BO3) requires 2 wins.',
-        'Expected Result: Persistent score tracking across rounds until a winner is found.'
+        'Description: Organizes battles into a competitive series of rounds.',
+        'How it works: Tracks wins across matches (Best of 3, 5, or 7). The first type to reach the required number of wins is crowned Champion.',
+        'Example: A Best of 3 (BO3) tournament where Rock wins 2 rounds.',
+        'Expected Result: Rock is declared the tournament winner and crowned Champion.'
       ],
       keywords: ['tournament', 'series', 'bo3', 'bo5', 'bo7', 'wins']
     },
     {
       title: 'Crazy Mode Events',
       content: [
-        'What it does: Triggers random chaotic events during battle.',
+        'Description: Triggers random chaotic events during the battle.',
         'How it works: Every 8-15 seconds, a random event is selected and activated.',
         '',
         '• Speed Boost ⚡: All units gain 2x speed for 5 seconds.',
@@ -54,37 +54,42 @@ const HelpCenter: React.FC = () => {
         '• Reverse Rules 🔄: RPS rules flip (e.g., Scissors beats Rock) for 10 seconds.',
         '• Giant Entity 🦍: One unit grows 3x in size and gains massive mass.',
         '• Chaos Storm 🌀: Units are flung in random directions.',
-        '• Double Population 👥: Every unit clones itself once.'
+        '• Double Population 👥: Every unit clones itself once.',
+        '',
+        'Example: Meteor Strike activates.',
+        'Expected Result: A warning circle appears followed by an explosion that kills any unit inside.'
       ],
       keywords: ['crazy', 'meteor', 'freeze', 'reverse', 'mode', 'events']
     },
     {
       title: 'Obstacles',
       content: [
-        'What it does: Places static physical barriers in the arena.',
+        'Description: Places static physical barriers in the arena.',
         'How it works: Walls and Boulders act as solid objects. Entities bounce off them using elastic collision physics.',
         'Example: A unit hits a Boulder.',
-        'Expected Result: The unit bounces back, losing some momentum depending on the angle.'
+        'Expected Result: The unit bounces back, losing momentum depending on the angle.'
       ],
       keywords: ['obstacles', 'walls', 'boulders', 'collisions']
     },
     {
       title: 'Power Zones',
       content: [
-        'What it does: Modifies unit behavior when they enter specific areas.',
+        'Description: Modifies unit behavior when they enter specific areas.',
+        'How it works: Each zone type applies a unique status effect to units.',
         '',
         '• Speed Zone (Yellow) 🟡: Units gain a permanent speed boost while inside.',
         '• Slow Zone (Blue) 🔵: Units move at 50% speed while inside.',
         '• Chaos Zone (Purple) 🟣: Units change to a random direction every 10 frames.',
         '',
-        'Expected Result: Tactical areas that can be used to outmaneuver or trap opponents.'
+        'Example: A unit enters a Speed Zone.',
+        'Expected Result: The unit accelerates significantly while traversing the zone.'
       ],
       keywords: ['zones', 'speed', 'slow', 'chaos', 'power']
     },
     {
       title: 'Arena Builder',
       content: [
-        'What it does: Allows custom arena design.',
+        'Description: Allows custom arena design.',
         'How it works: Select a tool (Wall, Boulder, Zone) and click the arena to place. Right-click any object to remove it.',
         'Example: Placing a Slow Zone in the center.',
         'Expected Result: Custom tactical layouts that can be saved and loaded.'
@@ -94,10 +99,12 @@ const HelpCenter: React.FC = () => {
     {
       title: 'Advanced Simulation',
       content: [
-        'What it does: Adds complex behavior and stats to units.',
+        'Description: Adds complex behavior and stats to units.',
+        'How it works: Enables specialized unit roles and logic.',
         '',
         '• Unit Classes: Units gain unique stats (Speed: Fast/Small, Tank: Slow/Large, Berserker: Aggressive/Massive).',
-        '• Advanced AI: Units use vector math to hunt prey and flee from predators instead of moving randomly.',
+        '• Advanced AI: Units use vector math to hunt prey and flee from predators.',
+        '',
         'Example: A Tank Rock chasing a Speed Scissors.',
         'Expected Result: Higher-tier strategic simulation with specialized unit roles.'
       ],
@@ -106,10 +113,15 @@ const HelpCenter: React.FC = () => {
     {
       title: 'Random & Chaos Modes',
       content: [
-        '• Random Battle: Generates a random set of units, shapes, and settings.',
-        '• Auto Play: Automatically starts a new random battle after the current one finishes.',
-        '• Ultimate Chaos Mode: Enables EVERYTHING—Crazy Mode, AI, Classes, Max Speed, and Random setup in one click.',
-        'Expected Result: Unpredictable and high-energy spectator matches.'
+        'Description: Generates unpredictable battle scenarios.',
+        'How it works: Randomizes simulation parameters or automates match progression.',
+        '',
+        '• Random Battle: Randomizes units, shapes, and settings.',
+        '• Auto Play: Automatically starts a new random match after the current one finishes.',
+        '• Ultimate Chaos Mode: Enables Crazy Mode, AI, Classes, Max Speed, and Random setup in one click.',
+        '',
+        'Example: Pressing Ultimate Chaos.',
+        'Expected Result: A high-energy spectator match with all features enabled simultaneously.'
       ],
       keywords: ['random', 'chaos', 'autoplay', 'ultimate']
     },
@@ -170,7 +182,7 @@ const HelpCenter: React.FC = () => {
                     margin: line === '' ? '0.5rem 0' : '0.35rem 0',
                     lineHeight: '1.4',
                     color: line.startsWith('•') ? '#F1F5F9' : '#94A3B8',
-                    fontWeight: line.startsWith('•') ? '600' : '400'
+                    fontWeight: line.startsWith('•') ? '600' : (line.includes(':') ? '500' : '400')
                 }}>
                     {line}
                 </p>
@@ -185,23 +197,11 @@ const HelpCenter: React.FC = () => {
         )}
       </div>
 
-      <footer className="help-footer" style={{
-          marginTop: '3rem',
-          paddingTop: '2rem',
-          borderTop: '1px solid #374151',
-          textAlign: 'center'
-      }}>
-          <p style={{ fontSize: '0.75rem', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>DESIGNED & DEVELOPED BY</p>
-          <h2 style={{
-              color: '#3B82F6',
-              fontSize: '1.8rem',
-              fontWeight: '900',
-              margin: '0.5rem 0',
-              letterSpacing: '0.1em'
-          }}>
-              KSPC
-          </h2>
-          <p style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: '500' }}>
+      <footer className="help-footer">
+          <div className="footer-separator">━━━━━━━━━━━━━━━━━━</div>
+          <p className="footer-label">Designed & Developed By</p>
+          <h2 className="footer-brand">KSPC</h2>
+          <p className="footer-copyright">
               RPS Arena Royale © 2026
           </p>
       </footer>

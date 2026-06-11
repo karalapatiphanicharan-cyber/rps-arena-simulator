@@ -277,6 +277,7 @@ function App() {
       engineRef.current.setArenaShape(arenaShape);
       engineRef.current.spawn(counts, skipFeatureGeneration);
       engineRef.current.start();
+      setRightExpanded(prev => ({ ...prev, stats: true }));
     }
   }, [arenaShape, counts]);
 
@@ -764,7 +765,11 @@ function App() {
                 <div className="empty-message">
                   <span className="empty-icon">🎮</span>
                   <h2>Ready To Battle</h2>
-                  <p>Configure your simulation and press <strong>Start Battle</strong>.</p>
+                  <p>
+                    Configure your simulation,<br/>
+                    choose your settings,<br/>
+                    and press <strong>Start Battle</strong>.
+                  </p>
                 </div>
               </div>
             )}
