@@ -12,7 +12,7 @@ import type {
 } from '../types/game';
 import CollapsibleSection from './CollapsibleSection';
 import TournamentDashboard from './TournamentDashboard';
-import ArenaBuilder from './ArenaBuilder';
+import ArenaBuilder, { type BuilderTool } from './ArenaBuilder';
 import DevPanel from './DevPanel';
 import CrazyEventHistory from './CrazyEventHistory';
 
@@ -47,6 +47,8 @@ interface ControlPanelProps {
   onLoadPreset: (preset: ArenaPreset) => void;
   onSaveArena: (name: string) => void;
   onClearArena: () => void;
+  selectedTool: BuilderTool;
+  onToolChange: (tool: BuilderTool) => void;
   // Crazy History
   crazyHistory: CrazyEventName[];
   // Dev Tools
@@ -82,6 +84,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onLoadPreset,
   onSaveArena,
   onClearArena,
+  selectedTool,
+  onToolChange,
   crazyHistory,
   onTriggerCrazyEvent,
 }) => {
@@ -337,6 +341,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             onClearArena={onClearArena}
             currentShape={arenaShape}
             onShapeChange={onShapeChange}
+            selectedTool={selectedTool}
+            onToolChange={onToolChange}
         />
       </CollapsibleSection>
 

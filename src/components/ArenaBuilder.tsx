@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import type { ArenaPreset, ArenaShape } from '../types/game';
 
+export type BuilderTool = 'wall' | 'boulder' | 'speed' | 'slow' | 'chaos';
+
 interface ArenaBuilderProps {
     onLoadPreset: (preset: ArenaPreset) => void;
     onSaveArena: (name: string) => void;
     onClearArena: () => void;
     currentShape: ArenaShape;
     onShapeChange: (shape: ArenaShape) => void;
+    selectedTool: BuilderTool;
+    onToolChange: (tool: BuilderTool) => void;
 }
 
 const PRESETS: ArenaPreset[] = [
@@ -23,7 +27,10 @@ const PRESETS: ArenaPreset[] = [
     {
         name: 'Chaos',
         shape: 'circle',
-        obstacles: [],
+        obstacles: [
+            { id: 'chaos-obs-1', type: 'boulder', x: 500, y: 150, radius: 40 },
+            { id: 'chaos-obs-2', type: 'boulder', x: 500, y: 450, radius: 40 },
+        ],
         powerZones: [
             { id: 'chaos-1', type: 'chaos', x: 300, y: 300, radius: 100 },
             { id: 'chaos-2', type: 'chaos', x: 700, y: 300, radius: 100 },
@@ -38,11 +45,13 @@ const PRESETS: ArenaPreset[] = [
         powerZones: [
             { id: 'speed-z1', type: 'speed', x: 250, y: 300, radius: 80 },
             { id: 'speed-z2', type: 'speed', x: 750, y: 300, radius: 80 },
+            { id: 'speed-z3', type: 'slow', x: 500, y: 100, radius: 60 },
+            { id: 'speed-z4', type: 'slow', x: 500, y: 500, radius: 60 },
         ]
     }
 ];
 
-const ArenaBuilder = ({ onLoadPreset, onSaveArena, onClearArena, currentShape, onShapeChange }: ArenaBuilderProps) => {
+const ArenaBuilder = ({ onLoadPreset, onSaveArena, onClearArena, currentShape, onShapeChange, selectedTool, onToolChange }: ArenaBuilderProps) => {
     const [customArenas, setCustomArenas] = useState<ArenaPreset[]>([]);
     const [arenaName, setArenaName] = useState('');
 
@@ -64,13 +73,44 @@ const ArenaBuilder = ({ onLoadPreset, onSaveArena, onClearArena, currentShape, o
         }
     };
 
+    const tools: { id: BuilderTool; label: string; icon: string }[] = [
+        { id: 'wall', label: 'Wall', icon: '🧱' },
+        { id: 'boulder', label: 'Boulder', icon: '🪨' },
+        { id: 'speed', label: 'Speed Zone', icon: '⚡' },
+        { id: 'slow', label: 'Slow Zone', icon: '❄️' },
+        { id: 'chaos', label: 'Chaos Zone', icon: '🌀' },
+    ];
+
     return (
         <div className="arena-builder">
             <div className="input-group">
+                <label>Object Selector</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {tools.map(tool => (
+                        <button
+                            key={tool.id}
+                            onClick={() => onToolChange(tool.id)}
+                            className={`btn ${selectedTool === tool.id ? 'btn-start' : ''}`}
+                            style={{
+                                background: selectedTool === tool.id ? '' : '#374151',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            <span>{tool.icon}</span>
+                            <span style={{ fontSize: '0.7rem' }}>{tool.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="input-group">
                 <label>Interactive Editing</label>
                 <p style={{ fontSize: '0.75rem', color: '#94A3B8', margin: '0 0 0.5rem 0' }}>
-                    Left-click Arena to add random object.<br/>
-                    Right-click to remove object.
+                    <strong>Left-click</strong> Arena to place {selectedTool}.<br/>
+                    <strong>Right-click</strong> to remove object.
                 </p>
             </div>
 
@@ -101,6 +141,7 @@ const ArenaBuilder = ({ onLoadPreset, onSaveArena, onClearArena, currentShape, o
                         value={arenaName}
                         onChange={(e) => setArenaName(e.target.value)}
                         placeholder="Arena Name"
+                        style={{ flex: 1 }}
                     />
                     <button onClick={handleSave} className="btn btn-start">Save</button>
                 </div>
