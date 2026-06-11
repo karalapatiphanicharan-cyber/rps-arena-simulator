@@ -17,6 +17,7 @@ import type {
 import { GameEngine } from './game/GameEngine';
 import { TournamentManager } from './game/TournamentManager';
 import ControlPanel from './components/ControlPanel';
+import type { BuilderTool } from './components/ArenaBuilder';
 import CollapsibleSection from './components/CollapsibleSection';
 import ScoreBoard from './components/ScoreBoard';
 import WinnerModal from './components/WinnerModal';
@@ -33,6 +34,7 @@ function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<GameEngine | null>(null);
   const nextRoundTimerRef = useRef<number | null>(null);
+  const isRoundProcessedRef = useRef<boolean>(false);
 
   const [showLeftDrawer, setShowLeftDrawer] = useState(false);
   const [showRightDrawer, setShowRightDrawer] = useState(false);
@@ -64,6 +66,7 @@ function App() {
       const saved = localStorage.getItem('rps_match_history');
       return saved ? JSON.parse(saved) : [];
   });
+  const [selectedTool, setSelectedTool] = useState<BuilderTool>('wall');
 
   // State for GameState notifications
   const [gameState, setGameState] = useState<GameState>({
@@ -182,31 +185,37 @@ function App() {
 
           if (engineRef.current.getObjectAt(x, y)) return;
 
-          // Add random object
-          const type = Math.random() > 0.5 ? 'obstacle' : 'zone';
-          if (type === 'obstacle') {
-              const obsType = (['wall', 'boulder', 'moving'] as const)[Math.floor(Math.random() * 3)];
+          // Add selected object
+          if (selectedTool === 'wall') {
               const newObs: Obstacle = {
                   id: `manual-obs-${Date.now()}`,
-                  type: obsType,
+                  type: 'wall',
                   x, y,
-                  width: obsType === 'wall' ? 40 + Math.random() * 60 : undefined,
-                  height: obsType === 'wall' ? 20 + Math.random() * 30 : undefined,
-                  radius: obsType !== 'wall' ? 20 + Math.random() * 20 : undefined,
-                  velocityX: obsType === 'moving' ? (Math.random() - 0.5) * 2 : undefined,
-                  velocityY: obsType === 'moving' ? (Math.random() - 0.5) * 2 : undefined
+                  width: 60,
+                  height: 30
+              };
+              engineRef.current.setManualFeatures(
+                  [...gameState.manualObstacles, newObs],
+                  gameState.manualPowerZones
+              );
+          } else if (selectedTool === 'boulder') {
+              const newObs: Obstacle = {
+                  id: `manual-obs-${Date.now()}`,
+                  type: 'boulder',
+                  x, y,
+                  radius: 25
               };
               engineRef.current.setManualFeatures(
                   [...gameState.manualObstacles, newObs],
                   gameState.manualPowerZones
               );
           } else {
-              const zoneType = (['speed', 'slow', 'chaos'] as const)[Math.floor(Math.random() * 3)];
+              const zoneType = selectedTool as 'speed' | 'slow' | 'chaos';
               const newZone: PowerZone = {
                   id: `manual-zone-${Date.now()}`,
                   type: zoneType,
                   x, y,
-                  radius: 40 + Math.random() * 40
+                  radius: 50
               };
               engineRef.current.setManualFeatures(
                   gameState.manualObstacles,
@@ -229,6 +238,7 @@ function App() {
           clearTimeout(nextRoundTimerRef.current);
           nextRoundTimerRef.current = null;
       }
+      isRoundProcessedRef.current = false;
       engineRef.current.setArenaShape(arenaShape);
       engineRef.current.spawn(counts, skipFeatureGeneration);
       engineRef.current.start();
@@ -393,7 +403,8 @@ function App() {
 
   // Detect round finish and handle tournament logic
   useEffect(() => {
-      if (gameState.status === 'finished' && gameState.winner && !nextRoundTimerRef.current) {
+      if (gameState.status === 'finished' && gameState.winner && !isRoundProcessedRef.current) {
+          isRoundProcessedRef.current = true;
           // Add to match history
           const summary: MatchSummary = {
               id: `match-${Date.now()}`,
@@ -489,6 +500,8 @@ function App() {
             onLoadPreset={handleLoadPreset}
             onSaveArena={handleSaveArena}
             onClearArena={handleClearArena}
+            selectedTool={selectedTool}
+            onToolChange={setSelectedTool}
             crazyHistory={gameState.crazyMode.history}
             onTriggerCrazyEvent={handleTriggerCrazyEvent}
           />

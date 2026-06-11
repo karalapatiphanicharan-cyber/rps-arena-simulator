@@ -89,6 +89,7 @@ export class GameEngine {
   setManualFeatures(obstacles: Obstacle[], zones: PowerZone[]) {
       this.manualObstacles = obstacles;
       this.manualPowerZones = zones;
+      this.draw();
       this.notifyState(null, true);
   }
 
@@ -510,7 +511,7 @@ export class GameEngine {
                     entitySpeedMult *= 0.7;
                     if (Math.random() < 0.05) this.slowZoneVisits++;
                 } else if (zone.type === 'chaos') {
-                    if (Math.random() < 0.016) { // Approx once per second at 60fps
+                    if (Math.random() < 0.05) { // More frequent chaos for "obvious" effect
                         const angle = Math.random() * Math.PI * 2;
                         const speed = Math.sqrt(entity.velocityX**2 + entity.velocityY**2);
                         entity.velocityX = Math.cos(angle) * speed;
@@ -783,14 +784,30 @@ export class GameEngine {
     const allObs = [...this.obstacles, ...this.manualObstacles];
     allObs.forEach(obs => {
         this.ctx.save();
-        this.ctx.fillStyle = '#4B5563';
-        this.ctx.strokeStyle = '#94A3B8';
-        this.ctx.lineWidth = 2;
         if (obs.type === 'wall' && obs.width && obs.height) {
+            this.ctx.fillStyle = '#4B5563';
+            this.ctx.strokeStyle = '#94A3B8';
+            this.ctx.lineWidth = 2;
             this.ctx.translate(obs.x, obs.y);
             this.ctx.fillRect(-obs.width/2, -obs.height/2, obs.width, obs.height);
             this.ctx.strokeRect(-obs.width/2, -obs.height/2, obs.width, obs.height);
-        } else if (obs.radius) {
+        } else if (obs.type === 'boulder' && obs.radius) {
+            this.ctx.fillStyle = '#64748B';
+            this.ctx.strokeStyle = '#94A3B8';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.stroke();
+            // Texture for boulder
+            this.ctx.beginPath();
+            this.ctx.arc(obs.x - obs.radius*0.3, obs.y - obs.radius*0.3, obs.radius*0.2, 0, Math.PI*2);
+            this.ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            this.ctx.fill();
+        } else if (obs.type === 'moving' && obs.radius) {
+            this.ctx.fillStyle = '#EF4444';
+            this.ctx.strokeStyle = '#F87171';
+            this.ctx.lineWidth = 3;
             this.ctx.beginPath();
             this.ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
             this.ctx.fill();
