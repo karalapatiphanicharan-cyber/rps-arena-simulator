@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import './styles.css';
 import type {
     GameCounts,
@@ -17,17 +17,13 @@ import type {
 import { GameEngine } from './game/GameEngine';
 import { TournamentManager } from './game/TournamentManager';
 import ControlPanel from './components/ControlPanel';
+import CollapsibleSection from './components/CollapsibleSection';
 import ScoreBoard from './components/ScoreBoard';
 import WinnerModal from './components/WinnerModal';
 import ProgressIndicator from './components/ProgressIndicator';
 import BattleFeed from './components/BattleFeed';
-import TournamentDashboard from './components/TournamentDashboard';
 import MatchHistory from './components/MatchHistory';
 import CrazyEventBanner from './components/CrazyEventBanner';
-import CrazyEventHistory from './components/CrazyEventHistory';
-import DevPanel from './components/DevPanel';
-import CollapsibleSection from './components/CollapsibleSection';
-import ArenaBuilder from './components/ArenaBuilder';
 import { soundManager } from './game/SoundManager';
 
 const ARENA_WIDTH = 1000;
@@ -69,14 +65,7 @@ function App() {
       return saved ? JSON.parse(saved) : [];
   });
 
-  useEffect(() => {
-      localStorage.setItem('rps_match_history', JSON.stringify(matchHistory.slice(0, 20)));
-  }, [matchHistory]);
-
-  useEffect(() => {
-    soundManager.setEnabled(!isMuted);
-  }, [isMuted]);
-
+  // State for GameState notifications
   const [gameState, setGameState] = useState<GameState>({
     counts: { rock: 0, paper: 0, scissors: 0 },
     status: 'idle',
@@ -115,31 +104,47 @@ function App() {
     }
   });
 
-  const handleStateChange = useCallback((state: GameState) => {
-      setGameState(prevState => ({
-          ...state,
-          tournament: prevState.tournament,
-          autoPlay: autoPlay // Maintain autoPlay state
-      }));
+  // Refs for state that engine needs access to via callback
+  const tournamentStateRef = useRef(tournamentState);
+  const autoPlayRef = useRef(autoPlay);
+
+  useEffect(() => {
+      tournamentStateRef.current = tournamentState;
+  }, [tournamentState]);
+
+  useEffect(() => {
+      autoPlayRef.current = autoPlay;
   }, [autoPlay]);
 
-  const engine = useMemo(() => {
-    if (canvasRef.current) {
+  const handleStateChange = useCallback((state: GameState) => {
+      setGameState({
+          ...state,
+          tournament: tournamentStateRef.current,
+          autoPlay: autoPlayRef.current
+      });
+  }, []);
+
+  // Initialize engine once
+  useEffect(() => {
+    if (canvasRef.current && !engineRef.current) {
         const ctx = canvasRef.current.getContext('2d');
         if (ctx) {
-            return new GameEngine(
+            engineRef.current = new GameEngine(
                 ctx,
                 { width: ARENA_WIDTH, height: ARENA_HEIGHT },
                 handleStateChange
             );
         }
     }
-    return null;
   }, [handleStateChange]);
 
   useEffect(() => {
-    engineRef.current = engine;
-  }, [engine]);
+      localStorage.setItem('rps_match_history', JSON.stringify(matchHistory.slice(0, 20)));
+  }, [matchHistory]);
+
+  useEffect(() => {
+    soundManager.setEnabled(!isMuted);
+  }, [isMuted]);
 
   useEffect(() => {
       const canvas = canvasRef.current;
@@ -462,6 +467,7 @@ function App() {
             arenaShape={arenaShape}
             simulationSpeed={simulationSpeed}
             tournamentType={tournamentType}
+            tournamentState={tournamentState}
             onCountsChange={setCounts}
             onNamesChange={setPlayerNames}
             onShapeChange={handleShapeChange}
@@ -480,31 +486,12 @@ function App() {
             onRandomTournament={handleRandomTournament}
             autoPlay={autoPlay}
             onAutoPlayToggle={setAutoPlay}
+            onLoadPreset={handleLoadPreset}
+            onSaveArena={handleSaveArena}
+            onClearArena={handleClearArena}
+            crazyHistory={gameState.crazyMode.history}
+            onTriggerCrazyEvent={handleTriggerCrazyEvent}
           />
-
-          <CollapsibleSection title="Tournament Info" defaultExpanded={tournamentState.type !== 'single'} icon="🏁">
-            <TournamentDashboard state={tournamentState} playerNames={playerNames} />
-          </CollapsibleSection>
-
-          <CollapsibleSection title="Crazy History" defaultExpanded={false} icon="📜">
-            <CrazyEventHistory history={gameState.crazyMode.history} />
-          </CollapsibleSection>
-
-          <CollapsibleSection title="Arena Builder" defaultExpanded={false} icon="🏗️">
-            <ArenaBuilder
-                onLoadPreset={handleLoadPreset}
-                onSaveArena={handleSaveArena}
-                onClearArena={handleClearArena}
-                currentShape={arenaShape}
-                onShapeChange={handleShapeChange}
-            />
-          </CollapsibleSection>
-
-          {crazyMode && (
-            <CollapsibleSection title="Dev Tools" defaultExpanded={false} icon="🛠️">
-              <DevPanel onTriggerEvent={handleTriggerCrazyEvent} enabled={crazyMode} />
-            </CollapsibleSection>
-          )}
 
           <div className="card mute-card">
               <button
@@ -586,7 +573,10 @@ function App() {
           </div>
           <ScoreBoard
             playerNames={playerNames}
-            stats={gameState.stats}
+            stats={{
+                ...gameState.stats,
+                counts: currentCounts
+            }}
             tournament={tournamentState}
           />
 

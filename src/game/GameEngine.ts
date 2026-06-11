@@ -65,6 +65,7 @@ export class GameEngine {
 
   setArenaShape(shape: ArenaShape) {
     this.shape = shape;
+    this.draw();
     this.notifyState(null, true);
   }
 
@@ -261,6 +262,7 @@ export class GameEngine {
       }
     });
     this.status = 'idle';
+    this.draw();
     this.notifyState(null, true);
   }
 
@@ -272,6 +274,7 @@ export class GameEngine {
         this.startTime = Date.now();
     }
     this.status = 'running';
+    this.notifyState(null, true);
     const loop = () => {
       if (this.status !== 'running') return;
       this.update();
