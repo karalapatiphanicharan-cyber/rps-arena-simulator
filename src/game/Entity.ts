@@ -35,16 +35,16 @@ export class Entity implements EntityData {
     // Class properties
     this.radius = data.radius;
     if (this.unitClass === 'speed') {
-        this.radius *= 0.8;
-        this.minSpeed *= 1.5;
-        this.maxSpeed *= 1.5;
+        this.radius *= 0.7; // Even smaller
+        this.minSpeed = 5.0; // 50% faster than 3.3 approx
+        this.maxSpeed = 10.0;
     } else if (this.unitClass === 'tank') {
-        this.radius *= 1.4;
-        this.minSpeed *= 0.7;
-        this.maxSpeed *= 0.7;
+        this.radius *= 1.8; // Larger
+        this.minSpeed = 2.0; // Slower
+        this.maxSpeed = 4.0;
     } else if (this.unitClass === 'berserker') {
-        this.minSpeed *= 1.2;
-        this.maxSpeed *= 1.3;
+        this.minSpeed = 4.0;
+        this.maxSpeed = 8.0;
     }
 
     this.baseRadius = this.radius;
@@ -92,8 +92,9 @@ export class Entity implements EntityData {
             const dx = target.x - this.x;
             const dy = target.y - this.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
-            steerX += (dx / dist) * 0.2;
-            steerY += (dy / dist) * 0.2;
+            const force = (this.aiMode === 'hunter' || this.unitClass === 'berserker') ? 0.4 : 0.25;
+            steerX += (dx / dist) * force;
+            steerY += (dy / dist) * force;
         }
     }
 

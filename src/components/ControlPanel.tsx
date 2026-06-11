@@ -64,6 +64,8 @@ interface ControlPanelProps {
   onAIDistChange: (val: any) => void;
   // Dev Tools
   onTriggerCrazyEvent: (name: CrazyEventName) => void;
+  expandedStates: Record<string, boolean>;
+  onToggleSection: (key: string, val: boolean) => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -108,6 +110,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onClassDistChange,
   onAIDistChange,
   onTriggerCrazyEvent,
+  expandedStates,
+  onToggleSection
 }) => {
   const handleCountChange = (type: keyof GameCounts, value: string) => {
     const numValue = parseInt(value) || 0;
@@ -137,7 +141,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
       </div>
 
-      <CollapsibleSection title="Game Controls" defaultExpanded icon="⚙️">
+      <CollapsibleSection
+        title="Game Controls"
+        expanded={expandedStates.controls}
+        onToggle={(v) => onToggleSection('controls', v)}
+        icon="⚙️"
+      >
         <div className="section">
           <div className="input-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <label style={{ margin: 0 }}>Crazy Mode</label>
@@ -162,7 +171,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Arena Settings" defaultExpanded={false} icon="🏟️">
+      <CollapsibleSection
+        title="Arena Settings"
+        expanded={expandedStates.arena}
+        onToggle={(v) => onToggleSection('arena', v)}
+        icon="🏟️"
+      >
         <div className="section">
           <div className="input-group">
             <label>Obstacles</label>
@@ -227,7 +241,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="⚔ Advanced Simulation" defaultExpanded={false} icon="⚔">
+      <CollapsibleSection
+        title="⚔ Advanced Simulation"
+        expanded={expandedStates.adv}
+        onToggle={(v) => onToggleSection('adv', v)}
+        icon="⚔"
+      >
           <AdvancedSimulationPanel
             enabled={unitClassesEnabled}
             aiEnabled={advancedAIEnabled}
@@ -240,7 +259,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           />
       </CollapsibleSection>
 
-      <CollapsibleSection title="Player Settings" defaultExpanded={false} icon="👥">
+      <CollapsibleSection
+        title="Player Settings"
+        expanded={expandedStates.players}
+        onToggle={(v) => onToggleSection('players', v)}
+        icon="👥"
+      >
         <div className="section">
           <h3 className="section-subtitle" style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '0.5rem' }}>Player Names</h3>
           <div className="input-group">
@@ -302,7 +326,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="🏆 Tournament" defaultExpanded={tournamentState.type !== 'single'} icon="🏆">
+      <CollapsibleSection
+        title="🏆 Tournament"
+        expanded={expandedStates.tournament}
+        onToggle={(v) => onToggleSection('tournament', v)}
+        icon="🏆"
+      >
           <div className="section">
               <TournamentDashboard state={tournamentState} playerNames={playerNames} />
               <div className="input-group" style={{ marginTop: '1rem' }}>
@@ -329,7 +358,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="🎲 Random Modes" defaultExpanded={false} icon="🎲">
+      <CollapsibleSection
+        title="🎲 Random Modes"
+        expanded={expandedStates.random}
+        onToggle={(v) => onToggleSection('random', v)}
+        icon="🎲"
+      >
           <div className="section">
               <div className="button-group" style={{ marginTop: 0 }}>
                   <button
@@ -375,7 +409,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="🏗 Arena Builder" defaultExpanded={false} icon="🏗️">
+      <CollapsibleSection
+        title="🏗 Arena Builder"
+        expanded={expandedStates.builder}
+        onToggle={(v) => onToggleSection('builder', v)}
+        icon="🏗️"
+      >
         <ArenaBuilder
             onLoadPreset={onLoadPreset}
             onSaveArena={onSaveArena}

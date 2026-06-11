@@ -7,9 +7,11 @@ interface ScoreBoardProps {
   playerNames: PlayerNames;
   stats: GameStats;
   tournament: TournamentState;
+  expandedStates: Record<string, boolean>;
+  onToggleSection: (key: string, val: boolean) => void;
 }
 
-const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament }) => {
+const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament, expandedStates, onToggleSection }) => {
   const {
     counts, elapsedTime, arenaShape, totalCollisions, totalConversions, crazyMode,
     obstacleCollisions, speedZoneVisits, slowZoneVisits, chaosZoneVisits
@@ -43,7 +45,12 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
 
   return (
     <div className="scoreboard-container">
-      <CollapsibleSection title="Live Scoreboard" defaultExpanded icon="📊">
+      <CollapsibleSection
+        title="Live Scoreboard"
+        expanded={expandedStates.scoreboard}
+        onToggle={(v) => onToggleSection('scoreboard', v)}
+        icon="📊"
+      >
         <div className="score-cards">
           <div className="score-card rock">
             <div className="info">
@@ -69,7 +76,12 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Statistics" defaultExpanded={false} icon="📈">
+      <CollapsibleSection
+        title="Statistics"
+        expanded={expandedStates.stats}
+        onToggle={(v) => onToggleSection('stats', v)}
+        icon="📈"
+      >
         <div className="stats-grid">
           <div className="stat-item">
             <span className="stat-label">Total Collisions</span>
@@ -126,7 +138,12 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
       )}
 
       {stats.advanced && (
-          <CollapsibleSection title="Advanced Stats" defaultExpanded={false} icon="🧠">
+          <CollapsibleSection
+            title="Advanced Stats"
+            expanded={expandedStates.advStats}
+            onToggle={(v) => onToggleSection('advStats', v)}
+            icon="🧠"
+          >
               <div className="stats-grid">
                   <div className="stat-group-title" style={{ fontSize: '0.7rem', color: '#94A3B8', marginTop: '0.5rem', borderBottom: '1px solid #374151' }}>Class Wins</div>
                   <div className="stat-item">
@@ -152,7 +169,12 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament 
       )}
 
       {tournament.type !== 'single' && tournament.champion && (
-          <CollapsibleSection title="Tournament Stats" defaultExpanded={false} icon="🏆">
+          <CollapsibleSection
+            title="Tournament Stats"
+            expanded={expandedStates.tournStats}
+            onToggle={(v) => onToggleSection('tournStats', v)}
+            icon="🏆"
+          >
               <div className="stats-grid">
                 <div className="stat-item">
                     <span className="stat-label">Avg Round Time</span>
