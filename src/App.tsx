@@ -8,7 +8,8 @@ import type {
     ArenaShape,
     GameState,
     TournamentType,
-    TournamentState
+    TournamentState,
+    CrazyEventName
 } from './types/game';
 import { GameEngine } from './game/GameEngine';
 import { TournamentManager } from './game/TournamentManager';
@@ -21,6 +22,7 @@ import TournamentDashboard from './components/TournamentDashboard';
 import MatchHistory from './components/MatchHistory';
 import CrazyEventBanner from './components/CrazyEventBanner';
 import CrazyEventHistory from './components/CrazyEventHistory';
+import DevPanel from './components/DevPanel';
 import { soundManager } from './game/SoundManager';
 
 const ARENA_WIDTH = 1000;
@@ -169,6 +171,12 @@ function App() {
       }
   };
 
+  const handleTriggerCrazyEvent = (name: CrazyEventName) => {
+      if (engineRef.current) {
+          engineRef.current.triggerCrazyEvent(name);
+      }
+  };
+
   const handleTournamentTypeChange = (type: TournamentType) => {
       setTournamentType(type);
       const newState = TournamentManager.getInitialState(type);
@@ -231,6 +239,7 @@ function App() {
           />
           <TournamentDashboard state={tournamentState} playerNames={playerNames} />
           <CrazyEventHistory history={gameState.crazyMode.history} />
+          <DevPanel onTriggerEvent={handleTriggerCrazyEvent} enabled={crazyMode} />
 
           <div className="card" style={{ marginTop: '1rem' }}>
               <button

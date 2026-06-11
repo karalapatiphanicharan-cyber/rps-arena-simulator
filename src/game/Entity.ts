@@ -14,8 +14,8 @@ export class Entity implements EntityData {
   isGiant: boolean = false;
   private baseRadius: number;
 
-  private readonly minSpeed = 1.5;
-  private readonly maxSpeed = 3.5;
+  private readonly minSpeed = 3.0;
+  private readonly maxSpeed = 7.0;
   private rotation = 0;
   private floatOffset = 0;
   private floatSpeed = Math.random() * 0.05 + 0.02;
