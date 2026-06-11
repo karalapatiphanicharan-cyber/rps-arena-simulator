@@ -10,16 +10,6 @@ https://rps-arena-simulator.vercel.app
 
 ---
 
-## 📸 Screenshots
-
-### Home Screen
-
-![Home Screen](./screenshots/rps home.png)
-
-### Live Battle
-
-![Battle Screen](./screenshots/rpsbattle.png)
-
 ---
 
 ## ✨ Features
