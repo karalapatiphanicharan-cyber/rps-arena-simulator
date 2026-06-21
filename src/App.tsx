@@ -96,6 +96,7 @@ function App() {
       };
   });
   const [selectedTool, setSelectedTool] = useState<BuilderTool>('wall');
+  const [isEditing, setIsEditing] = useState(false);
 
   // State for GameState notifications
   const [gameState, setGameState] = useState<GameState>({
@@ -193,7 +194,7 @@ function App() {
 
       const handleContextMenu = (e: MouseEvent) => {
           e.preventDefault();
-          if (!engineRef.current) return;
+          if (!isEditing || !engineRef.current) return;
           const rect = canvas.getBoundingClientRect();
           const x = e.clientX - rect.left;
           const y = e.clientY - rect.top;
@@ -201,7 +202,7 @@ function App() {
       };
 
       const handleMouseMove = (e: MouseEvent) => {
-          if (!engineRef.current) return;
+          if (!isEditing || !engineRef.current) return;
           const rect = canvas.getBoundingClientRect();
           const x = e.clientX - rect.left;
           const y = e.clientY - rect.top;
@@ -210,7 +211,7 @@ function App() {
 
       const handleClick = (e: MouseEvent) => {
           if (e.button !== 0) return; // Only left click
-          if (!engineRef.current || (gameState.status !== 'idle' && gameState.status !== 'finished')) return;
+          if (!isEditing || !engineRef.current || (gameState.status !== 'idle' && gameState.status !== 'finished')) return;
 
           const rect = canvas.getBoundingClientRect();
           const x = e.clientX - rect.left;
@@ -265,7 +266,7 @@ function App() {
           canvas.removeEventListener('mousedown', handleClick);
           canvas.removeEventListener('mousemove', handleMouseMove);
       };
-  }, [gameState.status, gameState.manualObstacles, gameState.manualPowerZones, selectedTool]);
+  }, [gameState.status, gameState.manualObstacles, gameState.manualPowerZones, selectedTool, isEditing]);
 
   const handleStart = useCallback((skipFeatureGeneration: boolean = false) => {
     if (engineRef.current) {
@@ -675,6 +676,8 @@ function App() {
             onClearArena={handleClearArena}
             selectedTool={selectedTool}
             onToolChange={setSelectedTool}
+            isEditing={isEditing}
+            onEditingToggle={setIsEditing}
             crazyHistory={gameState.crazyMode.history}
             unitClassesEnabled={unitClasses}
             advancedAIEnabled={advancedAI}

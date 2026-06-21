@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { EntityType, GameCounts, PlayerNames, GameStats, TournamentState } from '../types/game';
-import { getEmoji } from '../game/Rules';
 import confetti from 'canvas-confetti';
+import TypeIcon from './TypeIcon';
 
 interface WinnerModalProps {
   winner: EntityType | null;
@@ -72,7 +72,9 @@ const WinnerModal: React.FC<WinnerModalProps> = ({
             <h1 className="winner-title">{winnerName.toUpperCase()} WINS ROUND {tournament.history.length}!</h1>
         )}
 
-        <div className="winner-display" style={{ animation: 'bounce 1s infinite' }}>{getEmoji(winner)}</div>
+        <div className="winner-display" style={{ animation: 'bounce 1s infinite' }}>
+            <TypeIcon type={winner} size={120} />
+        </div>
 
         <div className="winner-stats">
           {isChampion ? (

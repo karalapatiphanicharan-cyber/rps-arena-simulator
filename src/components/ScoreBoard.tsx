@@ -1,7 +1,7 @@
 import React from 'react';
 import type { PlayerNames, EntityType, GameStats, TournamentState } from '../types/game';
-import { getEmoji } from '../game/Rules';
 import CollapsibleSection from './CollapsibleSection';
+import TypeIcon from './TypeIcon';
 
 interface ScoreBoardProps {
   playerNames: PlayerNames;
@@ -54,21 +54,21 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament,
         <div className="score-cards">
           <div className="score-card rock">
             <div className="info">
-              <span className="emoji">{getEmoji('rock')}</span>
+              <span className="emoji"><TypeIcon type="rock" size={24} /></span>
               <span className="name">{playerNames.rock}</span>
             </div>
             <span className="count">{counts.rock}</span>
           </div>
           <div className="score-card paper">
             <div className="info">
-              <span className="emoji">{getEmoji('paper')}</span>
+              <span className="emoji"><TypeIcon type="paper" size={24} /></span>
               <span className="name">{playerNames.paper}</span>
             </div>
             <span className="count">{counts.paper}</span>
           </div>
           <div className="score-card scissors">
             <div className="info">
-              <span className="emoji">{getEmoji('scissors')}</span>
+              <span className="emoji"><TypeIcon type="scissors" size={24} /></span>
               <span className="name">{playerNames.scissors}</span>
             </div>
             <span className="count">{counts.scissors}</span>
