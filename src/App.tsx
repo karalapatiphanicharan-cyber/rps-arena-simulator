@@ -760,7 +760,7 @@ function App() {
             </div>
           </div>
           <div className="arena-container">
-            {gameState.status === 'idle' && (
+            {gameState.status === 'idle' && !leftExpanded.builder && (
               <div className="empty-arena-overlay">
                 <div className="empty-message">
                   <span className="empty-icon">🎮</span>
@@ -842,6 +842,24 @@ function App() {
           >
             <HelpCenter />
           </CollapsibleSection>
+
+          <footer className="sidebar-footer">
+            <div className="footer-item">
+              <span className="footer-label">GitHub Repository</span>
+              <a
+                href="https://github.com/karalapatiphanicharan-cyber/rps-arena-simulator"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="github-link"
+              >
+                https://github.com/karalapatiphanicharan-cyber/rps-arena-simulator
+              </a>
+            </div>
+            <div className="footer-item">
+              <span className="footer-label">Done by</span>
+              <span className="author-name">Phani Charan</span>
+            </div>
+          </footer>
         </aside>
       </main>
 
