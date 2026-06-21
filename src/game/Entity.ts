@@ -203,6 +203,34 @@ export class Entity implements EntityData {
         ctx.shadowColor = '#EF4444';
     }
 
+    // Specialized Rock Visuals
+    if (this.type === 'rock') {
+        const stoneRadius = this.radius * 0.95;
+        const gradient = ctx.createRadialGradient(
+            -stoneRadius * 0.3, -stoneRadius * 0.3, stoneRadius * 0.1,
+            0, 0, stoneRadius
+        );
+        gradient.addColorStop(0, '#9CA3AF'); // Highlight
+        gradient.addColorStop(0.4, '#6B7280'); // Main
+        gradient.addColorStop(1, '#4B5563'); // Shadow
+
+        ctx.beginPath();
+        ctx.arc(0, 0, stoneRadius, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Thin dark outline for contrast
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Subtle inner highlight
+        ctx.beginPath();
+        ctx.arc(-stoneRadius * 0.2, -stoneRadius * 0.2, stoneRadius * 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.fill();
+    }
+
     ctx.font = `${this.radius * 2}px serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
