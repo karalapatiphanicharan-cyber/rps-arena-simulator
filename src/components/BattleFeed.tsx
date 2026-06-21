@@ -1,6 +1,6 @@
 import React from 'react';
 import type { BattleEvent, EntityType } from '../types/game';
-import { getEmoji } from '../game/Rules';
+import TypeIcon from './TypeIcon';
 
 interface BattleFeedProps {
   events: BattleEvent[];
@@ -36,9 +36,9 @@ const BattleFeed: React.FC<BattleFeedProps> = ({ events }) => {
               animation: 'slideIn 0.2s ease-out'
             }}
           >
-            <span style={{ color: getColor(event.winner) }}>{getEmoji(event.winner)}</span>
+            <span style={{ color: getColor(event.winner) }}><TypeIcon type={event.winner} size={18} /></span>
             <span>converted</span>
-            <span style={{ color: getColor(event.loser) }}>{getEmoji(event.loser)}</span>
+            <span style={{ color: getColor(event.loser) }}><TypeIcon type={event.loser} size={18} /></span>
           </div>
         ))}
       </div>

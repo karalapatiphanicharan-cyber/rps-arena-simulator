@@ -206,10 +206,10 @@ export class GameEngine {
         return x - radius >= left && x + radius <= left + size && y - radius >= top && y + radius <= top + size;
       }
       case 'circle': {
-        const r = Math.min(width, height) / 2 - radius;
+        const r = Math.min(width, height) / 2 - 2;
         const dx = x - centerX;
         const dy = y - centerY;
-        return Math.sqrt(dx * dx + dy * dy) <= r;
+        return Math.sqrt(dx * dx + dy * dy) <= r - radius;
       }
       case 'triangle': {
         const size = Math.min(width, height);
@@ -220,8 +220,8 @@ export class GameEngine {
         return this.pointInTriangle({ x, y }, p1, p2, p3, radius);
       }
       case 'hexagon': {
-        const size = Math.min(width, height) / 2 - radius;
-        return this.pointInHexagon(x - centerX, y - centerY, size);
+        const r = Math.min(width, height) / 2 - 2;
+        return this.pointInHexagon(x - centerX, y - centerY, r, radius);
       }
       default:
         return true;
@@ -230,12 +230,15 @@ export class GameEngine {
 
   private pointInTriangle(p: { x: number, y: number }, p1: { x: number, y: number }, p2: { x: number, y: number }, p3: { x: number, y: number }, r: number) {
     const pt = p;
+    // Barycentric coordinates or simple half-space tests for point-in-triangle
     const d1 = (pt.x - p2.x) * (p1.y - p2.y) - (p1.x - p2.x) * (pt.y - p2.y);
     const d2 = (pt.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (pt.y - p3.y);
     const d3 = (pt.x - p1.x) * (p3.y - p1.y) - (p3.x - p1.x) * (pt.y - p1.y);
     const has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
     const has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
     if (has_neg && has_pos) return false;
+
+    // Check distance to each edge for radius buffer
     const distToEdge = (pa: {x:number, y:number}, pb: {x:number, y:number}) => {
         const l2 = (pa.x-pb.x)**2 + (pa.y-pb.y)**2;
         if (l2 === 0) return Math.sqrt((pt.x-pa.x)**2 + (pt.y-pa.y)**2);
@@ -246,11 +249,16 @@ export class GameEngine {
     return distToEdge(p1, p2) >= r && distToEdge(p2, p3) >= r && distToEdge(p3, p1) >= r;
   }
 
-  private pointInHexagon(dx: number, dy: number, r: number) {
+  private pointInHexagon(dx: number, dy: number, r: number, radius: number) {
     const q2x = Math.abs(dx);
     const q2y = Math.abs(dy);
-    if (q2x > r * Math.sqrt(3) / 2 || q2y > r) return false;
-    return r * r - r * q2y - 2 * (r / 2) * q2x / Math.sqrt(3) >= 0;
+
+    // Hexagon width is 2*r, height is sqrt(3)*r based on drawing logic
+    // Check rectangle bound first
+    if (q2y > (r * Math.sqrt(3) / 2) - radius || q2x > r - radius) return false;
+
+    // Check diagonal edges: |dx| * sqrt(3)/2 + |dy| * 0.5 <= r * sqrt(3)/2 - radius
+    return q2x * Math.sqrt(3) / 2 + q2y * 0.5 <= r * Math.sqrt(3) / 2 - radius;
   }
 
   spawn(counts: GameCounts, skipFeatureGeneration: boolean = false) {
@@ -280,9 +288,22 @@ export class GameEngine {
         let x, y, colliding;
         let attempts = 0;
         do {
+          // Initial guess within a safe bounding box for any shape
           x = radius + Math.random() * (this.arena.width - 2 * radius);
           y = radius + Math.random() * (this.arena.height - 2 * radius);
           colliding = !this.isInside(x, y, radius);
+
+          // If still colliding, try harder to find a spot inside the specific shape
+          if (colliding) {
+              const centerX = this.arena.width / 2;
+              const centerY = this.arena.height / 2;
+              if (this.shape === 'circle' || this.shape === 'hexagon' || this.shape === 'triangle') {
+                  const range = Math.min(this.arena.width, this.arena.height) / 3;
+                  x = centerX + (Math.random() - 0.5) * range;
+                  y = centerY + (Math.random() - 0.5) * range;
+                  colliding = !this.isInside(x, y, radius);
+              }
+          }
           if (!colliding) {
             for (const entity of this.entities) {
               const dx = x - entity.x;
@@ -763,47 +784,132 @@ export class GameEngine {
   }
 
   private getNormalX(x: number, y: number): number {
-      const centerX = this.arena.width / 2;
-      const centerY = this.arena.height / 2;
-      if (this.shape === 'circle') {
-          const dx = x - centerX;
-          const dy = y - centerY;
-          const dist = Math.sqrt(dx*dx + dy*dy);
-          return -dx / dist;
+    const centerX = this.arena.width / 2;
+    const centerY = this.arena.height / 2;
+    const { width, height } = this.arena;
+
+    switch (this.shape) {
+      case 'circle': {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        return dist > 0 ? -dx / dist : 0;
       }
-      if (this.shape === 'rectangle' || this.shape === 'square') {
-          const size = this.shape === 'square' ? Math.min(this.arena.width, this.arena.height) : 0;
-          const left = this.shape === 'square' ? centerX - size / 2 : 0;
-          const right = this.shape === 'square' ? centerX + size / 2 : this.arena.width;
-          if (x < left + 20) return 1;
-          if (x > right - 20) return -1;
-          return 0;
+      case 'rectangle':
+      case 'square': {
+        const size = this.shape === 'square' ? Math.min(width, height) : 0;
+        const left = this.shape === 'square' ? centerX - size / 2 : 0;
+        const right = this.shape === 'square' ? centerX + size / 2 : width;
+        if (x < left + 20) return 1;
+        if (x > right - 20) return -1;
+        return 0;
       }
-      const dx = x - centerX;
-      const dist = Math.sqrt((x-centerX)**2 + (y-centerY)**2);
-      return -dx / dist;
+      case 'triangle': {
+        const size = Math.min(width, height);
+        const h = (size * Math.sqrt(3)) / 2;
+        const p1 = { x: centerX, y: centerY - h / 2 };
+        const p2 = { x: centerX - size / 2, y: centerY + h / 2 };
+        const p3 = { x: centerX + size / 2, y: centerY + h / 2 };
+        return this.getClosestNormal(x, y, [p1, p2, p3]).x;
+      }
+      case 'hexagon': {
+        const r = Math.min(width, height) / 2 - 2;
+        const points = [];
+        for (let i = 0; i < 6; i++) {
+          const angle = (i * Math.PI) / 3;
+          points.push({ x: centerX + r * Math.cos(angle), y: centerY + r * Math.sin(angle) });
+        }
+        return this.getClosestNormal(x, y, points).x;
+      }
+    }
+    return 0;
   }
 
   private getNormalY(x: number, y: number): number {
     const centerX = this.arena.width / 2;
     const centerY = this.arena.height / 2;
-    if (this.shape === 'circle') {
+    const { width, height } = this.arena;
+
+    switch (this.shape) {
+      case 'circle': {
         const dx = x - centerX;
         const dy = y - centerY;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        return -dy / dist;
-    }
-    if (this.shape === 'rectangle' || this.shape === 'square') {
-        const size = this.shape === 'square' ? Math.min(this.arena.width, this.arena.height) : 0;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        return dist > 0 ? -dy / dist : 0;
+      }
+      case 'rectangle':
+      case 'square': {
+        const size = this.shape === 'square' ? Math.min(width, height) : 0;
         const top = this.shape === 'square' ? centerY - size / 2 : 0;
-        const bottom = this.shape === 'square' ? centerY + size / 2 : this.arena.height;
+        const bottom = this.shape === 'square' ? centerY + size / 2 : height;
         if (y < top + 20) return 1;
         if (y > bottom - 20) return -1;
         return 0;
+      }
+      case 'triangle': {
+        const size = Math.min(width, height);
+        const h = (size * Math.sqrt(3)) / 2;
+        const p1 = { x: centerX, y: centerY - h / 2 };
+        const p2 = { x: centerX - size / 2, y: centerY + h / 2 };
+        const p3 = { x: centerX + size / 2, y: centerY + h / 2 };
+        return this.getClosestNormal(x, y, [p1, p2, p3]).y;
+      }
+      case 'hexagon': {
+        const r = Math.min(width, height) / 2 - 2;
+        const points = [];
+        for (let i = 0; i < 6; i++) {
+          const angle = (i * Math.PI) / 3;
+          points.push({ x: centerX + r * Math.cos(angle), y: centerY + r * Math.sin(angle) });
+        }
+        return this.getClosestNormal(x, y, points).y;
+      }
     }
-    const dy = y - centerY;
-    const dist = Math.sqrt((x-centerX)**2 + (y-centerY)**2);
-    return -dy / dist;
+    return 0;
+  }
+
+  private getClosestNormal(x: number, y: number, points: { x: number, y: number }[]): { x: number, y: number } {
+    let minDist = Infinity;
+    let closestNormal = { x: 0, y: 0 };
+
+    for (let i = 0; i < points.length; i++) {
+      const p1 = points[i];
+      const p2 = points[(i + 1) % points.length];
+
+      // Edge vector
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+
+      // Normal vector (perpendicular to edge, pointing inwards)
+      // For a CCW polygon, the inward normal is (-dy, dx)
+      // The shapes drawn are actually CW or just built from angles.
+      // Let's calculate the normal and check its direction towards center.
+      let nx = -dy;
+      let ny = dx;
+      const len = Math.sqrt(nx * nx + ny * ny);
+      nx /= len;
+      ny /= len;
+
+      // Ensure normal points inward
+      const centerX = this.arena.width / 2;
+      const centerY = this.arena.height / 2;
+      const dot = (centerX - (p1.x + p2.x) / 2) * nx + (centerY - (p1.y + p2.y) / 2) * ny;
+      if (dot < 0) {
+        nx = -nx;
+        ny = -ny;
+      }
+
+      // Distance from point to line segment
+      const l2 = dx * dx + dy * dy;
+      let t = ((x - p1.x) * dx + (y - p1.y) * dy) / l2;
+      t = Math.max(0, Math.min(1, t));
+      const dist = Math.sqrt((x - (p1.x + t * dx)) ** 2 + (y - (p1.y + t * dy)) ** 2);
+
+      if (dist < minDist) {
+        minDist = dist;
+        closestNormal = { x: nx, y: ny };
+      }
+    }
+    return closestNormal;
   }
 
   private draw() {

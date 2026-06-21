@@ -11,6 +11,8 @@ interface ArenaBuilderProps {
     onShapeChange: (shape: ArenaShape) => void;
     selectedTool: BuilderTool;
     onToolChange: (tool: BuilderTool) => void;
+    isEditing: boolean;
+    onEditingToggle: (enabled: boolean) => void;
 }
 
 const PRESETS: ArenaPreset[] = [
@@ -51,7 +53,7 @@ const PRESETS: ArenaPreset[] = [
     }
 ];
 
-const ArenaBuilder = ({ onLoadPreset, onSaveArena, onClearArena, currentShape, onShapeChange, selectedTool, onToolChange }: ArenaBuilderProps) => {
+const ArenaBuilder = ({ onLoadPreset, onSaveArena, onClearArena, currentShape, onShapeChange, selectedTool, onToolChange, isEditing, onEditingToggle }: ArenaBuilderProps) => {
     const [customArenas, setCustomArenas] = useState<ArenaPreset[]>([]);
     const [arenaName, setArenaName] = useState('');
 
@@ -83,6 +85,26 @@ const ArenaBuilder = ({ onLoadPreset, onSaveArena, onClearArena, currentShape, o
 
     return (
         <div className="arena-builder">
+            <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+                <label>Editing Mode</label>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <button
+                        onClick={() => onEditingToggle(false)}
+                        className={`btn ${!isEditing ? 'btn-reset' : ''}`}
+                        style={{ flex: 1, background: !isEditing ? '' : '#374151' }}
+                    >
+                        OFF
+                    </button>
+                    <button
+                        onClick={() => onEditingToggle(true)}
+                        className={`btn ${isEditing ? 'btn-start' : ''}`}
+                        style={{ flex: 1, background: isEditing ? '' : '#374151' }}
+                    >
+                        ON
+                    </button>
+                </div>
+            </div>
+
             <div className="input-group">
                 <label>Object Selector</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem' }}>

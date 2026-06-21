@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('verify final layout and features', async ({ page }) => {
-  await page.goto('http://localhost:5174');
+  await page.goto('http://localhost:5173');
 
   // Wait for game to load
   await page.waitForSelector('canvas');

@@ -51,6 +51,8 @@ interface ControlPanelProps {
   onClearArena: () => void;
   selectedTool: BuilderTool;
   onToolChange: (tool: BuilderTool) => void;
+  isEditing: boolean;
+  onEditingToggle: (enabled: boolean) => void;
   // Crazy History
   crazyHistory: CrazyEventName[];
   // Advanced Sim
@@ -100,6 +102,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onClearArena,
   selectedTool,
   onToolChange,
+  isEditing,
+  onEditingToggle,
   crazyHistory,
   unitClassesEnabled,
   advancedAIEnabled,
@@ -382,6 +386,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             onShapeChange={onShapeChange}
             selectedTool={selectedTool}
             onToolChange={onToolChange}
+            isEditing={isEditing}
+            onEditingToggle={onEditingToggle}
         />
       </CollapsibleSection>
 
