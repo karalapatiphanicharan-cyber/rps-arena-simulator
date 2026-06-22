@@ -630,7 +630,7 @@ function App() {
     <div className="app-container">
       <header>
         <h1>
-          <RpsLogo size={36} />
+          <RpsLogo size={32} />
           RPS ARENA ROYALE
         </h1>
         <p className="subtitle">Real-Time Rock Paper Scissors Battle Simulator</p>
@@ -711,10 +711,10 @@ function App() {
           <div className="card mute-card">
               <button
                 onClick={() => setIsMuted(!isMuted)}
-                className="btn mute-btn"
-                style={{ background: isMuted ? '#4B5563' : '#10B981' }}
+                className={`btn mute-btn ${isMuted ? 'muted' : 'unmuted'}`}
               >
-                {isMuted ? '🔇 Sound: OFF' : '🔊 Sound: ON'}
+                <span className="mute-icon">{isMuted ? '🔇' : '🔊'}</span>
+                <span className="mute-text">Sound: {isMuted ? 'OFF' : 'ON'}</span>
               </button>
           </div>
         </aside>

@@ -30,7 +30,7 @@ const WinnerModal: React.FC<WinnerModalProps> = ({
 
   useEffect(() => {
     if (winner) {
-      const duration = 3 * 1000;
+      const duration = 2 * 1000;
       const animationEnd = Date.now() + duration;
       const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
@@ -64,7 +64,7 @@ const WinnerModal: React.FC<WinnerModalProps> = ({
   };
 
   return (
-    <div className="modal-overlay">
+    <div className={`modal-overlay ${isChampion ? 'champ-overlay' : ''}`}>
       <div className="modal-content" style={{ position: 'relative', zIndex: 100 }}>
         {isChampion ? (
             <h1 className="winner-title champ-title">🏆 {winnerName.toUpperCase()} IS THE CHAMPION!</h1>
@@ -159,6 +159,14 @@ const WinnerModal: React.FC<WinnerModalProps> = ({
         @keyframes pulse-glow {
             0%, 100% { transform: scale(1); opacity: 0.5; }
             50% { transform: scale(1.2); opacity: 0.8; }
+        }
+        .champ-overlay {
+            background: radial-gradient(circle, rgba(15, 23, 42, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+            animation: burst-bg 1s ease-out forwards;
+        }
+        @keyframes burst-bg {
+            0% { backdrop-filter: blur(0px); }
+            100% { backdrop-filter: blur(4px); }
         }
       `}</style>
     </div>

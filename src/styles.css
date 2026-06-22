@@ -49,6 +49,14 @@ header h1 {
   gap: 0.75rem;
 }
 
+header h1 svg {
+  transition: transform 0.2s ease-in-out;
+}
+
+header h1 svg:hover {
+  transform: scale(1.05) rotate(3deg);
+}
+
 
 header .subtitle {
   color: #94A3B8;
@@ -163,6 +171,28 @@ header .subtitle {
 .mute-btn {
   width: 100%;
   padding: 0.5rem !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.mute-btn.muted {
+  background: #4B5563;
+}
+
+.mute-btn.unmuted {
+  background: #10B981;
+}
+
+.mute-icon {
+  font-size: 1.1rem;
+  transition: transform 0.2s ease;
+}
+
+.mute-btn:active .mute-icon {
+  transform: scale(1.2);
 }
 
 .arena-container {
@@ -239,6 +269,23 @@ canvas {
 .btn-start {
   background: var(--success-color);
   color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-start.idle-pulse {
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
 }
 
 .btn-start:hover:not(:disabled) {
@@ -352,7 +399,7 @@ canvas {
 .collapsible-content-wrapper {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.3s ease-out;
+  transition: grid-template-rows 0.3s ease-in-out;
 }
 
 .collapsible-content-wrapper.open {
@@ -637,8 +684,23 @@ canvas {
   border: 1px solid var(--border-color);
   border-radius: 1.5rem;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  animation: floating 4s ease-in-out infinite;
 }
 
+@keyframes floating {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.empty-message .original-icon {
+  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+  animation: soft-glow 3s ease-in-out infinite;
+}
+
+@keyframes soft-glow {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.3)); }
+  50% { filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.6)); }
+}
 
 .empty-message h2 {
   margin: 0;
@@ -794,4 +856,14 @@ canvas {
 .entity-counts-row .input-group {
   flex: 1;
   margin-bottom: 0;
+}
+
+.count-pop {
+  animation: count-pop 0.18s ease-out;
+}
+
+@keyframes count-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); color: var(--text-color); }
+  100% { transform: scale(1); }
 }

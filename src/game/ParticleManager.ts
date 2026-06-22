@@ -16,8 +16,8 @@ export class ParticleManager {
         y: Math.random() * this.height,
         vx: (Math.random() - 0.5) * 0.2,
         vy: (Math.random() - 0.5) * 0.2,
-        size: Math.random() * 2 + 1,
-        alpha: Math.random() * 0.5
+        size: Math.random() * 1.5 + 0.5,
+        alpha: Math.random() * 0.2 + 0.05
       });
     }
   }
