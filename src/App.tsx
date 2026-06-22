@@ -173,6 +173,12 @@ function App() {
             );
         }
     }
+    return () => {
+        if (engineRef.current) {
+            engineRef.current.destroy();
+            engineRef.current = null;
+        }
+    };
   }, [handleStateChange]);
 
   useEffect(() => {
