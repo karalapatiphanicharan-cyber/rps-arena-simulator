@@ -196,16 +196,16 @@ function App() {
           e.preventDefault();
           if (!isEditing || !engineRef.current) return;
           const rect = canvas.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
+          const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+          const y = (e.clientY - rect.top) * (canvas.height / rect.height);
           engineRef.current.removeObjectAt(x, y);
       };
 
       const handleMouseMove = (e: MouseEvent) => {
           if (!isEditing || !engineRef.current) return;
           const rect = canvas.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
+          const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+          const y = (e.clientY - rect.top) * (canvas.height / rect.height);
           engineRef.current.updateHover(x, y);
       };
 
@@ -214,8 +214,8 @@ function App() {
           if (!isEditing || !engineRef.current || (gameState.status !== 'idle' && gameState.status !== 'finished')) return;
 
           const rect = canvas.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
+          const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+          const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
           if (engineRef.current.getObjectAt(x, y)) return;
 
