@@ -609,7 +609,14 @@ canvas {
   backdrop-filter: blur(8px);
   z-index: 10;
   pointer-events: none;
-  animation: fadeIn 0.5s ease-out;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.empty-arena-overlay.visible {
+  opacity: 1;
+  visibility: visible;
 }
 
 .empty-message {
@@ -725,17 +732,35 @@ canvas {
   margin: 0;
 }
 
-.github-link {
-  color: #3B82F6;
+.github-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #111827;
+  color: var(--text-color);
   text-decoration: none;
-  font-size: 0.75rem;
-  word-break: break-all;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color);
+  font-size: 0.8rem;
+  font-weight: 600;
   transition: var(--transition);
+  margin: 0.5rem auto;
+  width: 100%;
+  max-width: 200px;
 }
 
-.github-link:hover {
-  color: #60A5FA;
-  text-decoration: underline;
+.github-btn:hover {
+  background: #1F2937;
+  border-color: #4B5563;
+  transform: translateY(-1px);
+}
+
+.github-icon {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
 }
 
 .author-name {
