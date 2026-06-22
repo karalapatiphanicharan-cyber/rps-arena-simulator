@@ -118,6 +118,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onToggleSection
 }) => {
   const [countError, setCountError] = useState(false);
+  const [crazyHistoryExpanded, setCrazyHistoryExpanded] = useState(false);
 
   const handleCountChange = (type: keyof GameCounts, value: string) => {
     let numValue = parseInt(value) || 0;
@@ -327,8 +328,29 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
           {crazyMode && (
               <div style={{ marginTop: '1rem', borderTop: '1px solid #374151', paddingTop: '1rem' }}>
-                  <label style={{ fontSize: '0.8rem', color: '#94A3B8', display: 'block', marginBottom: '0.5rem' }}>Crazy History</label>
-                  <CrazyEventHistory history={crazyHistory} />
+                  <button
+                    onClick={() => setCrazyHistoryExpanded(!crazyHistoryExpanded)}
+                    className="btn"
+                    style={{
+                        background: 'none',
+                        padding: 0,
+                        width: '100%',
+                        textAlign: 'left',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        color: '#94A3B8',
+                        fontSize: '0.8rem',
+                        fontWeight: '600'
+                    }}
+                  >
+                      <span>{crazyHistoryExpanded ? '▼' : '▶'} Crazy History</span>
+                  </button>
+                  {crazyHistoryExpanded && (
+                      <div style={{ marginTop: '0.5rem' }}>
+                          <CrazyEventHistory history={crazyHistory} />
+                      </div>
+                  )}
               </div>
           )}
         </div>

@@ -105,6 +105,8 @@ const ArenaBuilder = ({ onLoadPreset, onSaveArena, onClearArena, currentShape, o
                 </div>
             </div>
 
+            {isEditing && (
+                <>
             <div className="input-group">
                 <label>Object Selector</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem' }}>
@@ -201,6 +203,8 @@ const ArenaBuilder = ({ onLoadPreset, onSaveArena, onClearArena, currentShape, o
                         ))}
                     </div>
                 </div>
+            )}
+                </>
             )}
         </div>
     );
