@@ -72,11 +72,19 @@ const WinnerModal: React.FC<WinnerModalProps> = ({
             <h1 className="winner-title">{winnerName.toUpperCase()} WINS ROUND {tournament.history.length}!</h1>
         )}
 
-        <div className="winner-display" style={{ animation: 'bounce 1s infinite' }}>
+        <div className="winner-display" style={{
+          animation: 'bounce 1s infinite',
+          margin: '2.5rem 0',
+          position: 'relative',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+            {isChampion && <div className="champion-glow" />}
             <TypeIcon type={winner} size={120} />
         </div>
 
-        <div className="winner-stats">
+        <div className="winner-stats" style={{ gap: '0.75rem', display: 'flex', flexDirection: 'column' }}>
           {isChampion ? (
               <>
                 <div className="stat-item">
@@ -137,6 +145,20 @@ const WinnerModal: React.FC<WinnerModalProps> = ({
         .champ-title {
             color: #FACC15;
             text-shadow: 0 0 20px rgba(250, 204, 21, 0.5);
+            letter-spacing: 0.05em;
+        }
+        .champion-glow {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(250, 204, 21, 0.4) 0%, rgba(250, 204, 21, 0) 70%);
+            border-radius: 50%;
+            z-index: -1;
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
         }
       `}</style>
     </div>
