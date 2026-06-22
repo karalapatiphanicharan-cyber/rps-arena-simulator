@@ -623,7 +623,7 @@ function App() {
     <div className="app-container">
       <header>
         <h1>
-          <img src="/logo.png" className="header-logo" alt="RPS Arena Royale Logo" />
+          <span>🎮</span>
           RPS ARENA ROYALE
         </h1>
         <p className="subtitle">Real-Time Rock Paper Scissors Battle Simulator</p>
@@ -774,7 +774,7 @@ function App() {
           <div className="arena-container">
             <div className={`empty-arena-overlay ${gameState.status === 'idle' && !leftExpanded.builder ? 'visible' : ''}`}>
               <div className="empty-message">
-                <img src="/logo.png" className="overlay-logo" alt="RPS Arena Royale Logo" />
+                <div className="original-icon" style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🎮</div>
                 <h2>Ready To Battle</h2>
                 <p>
                   Configure your simulation,<br/>
