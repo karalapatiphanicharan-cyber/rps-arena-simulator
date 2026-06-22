@@ -1,5 +1,5 @@
 import React from 'react';
-import type { PlayerNames, EntityType, GameStats, TournamentState } from '../types/game';
+import type { PlayerNames, EntityType, GameStats, TournamentState, GameStatus } from '../types/game';
 import CollapsibleSection from './CollapsibleSection';
 import TypeIcon from './TypeIcon';
 
@@ -7,11 +7,12 @@ interface ScoreBoardProps {
   playerNames: PlayerNames;
   stats: GameStats;
   tournament: TournamentState;
+  status: GameStatus;
   expandedStates: Record<string, boolean>;
   onToggleSection: (key: string, val: boolean) => void;
 }
 
-const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament, expandedStates, onToggleSection }) => {
+const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament, status, expandedStates, onToggleSection }) => {
   const {
     counts, elapsedTime, arenaShape, totalCollisions, totalConversions, crazyMode,
     obstacleCollisions, speedZoneVisits, slowZoneVisits, chaosZoneVisits
@@ -24,6 +25,7 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament,
   };
 
   const getLeader = (): string => {
+    if (status === 'idle') return 'Waiting for Battle';
     const types: EntityType[] = ['rock', 'paper', 'scissors'];
     let max = -1;
     let leader = 'None';
@@ -97,7 +99,7 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament,
           </div>
           <div className="stat-item">
             <span className="stat-label">Elapsed Time</span>
-            <span className="stat-value">{formatTime(elapsedTime)}</span>
+            <span className="stat-value">{status === 'idle' ? '00:00' : formatTime(elapsedTime)}</span>
           </div>
           <div className="stat-item">
             <span className="stat-label">Current Leader</span>
