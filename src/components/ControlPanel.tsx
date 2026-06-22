@@ -121,7 +121,25 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   const [crazyHistoryExpanded, setCrazyHistoryExpanded] = useState(false);
 
   const handleCountChange = (type: keyof GameCounts, value: string) => {
-    let numValue = parseInt(value) || 0;
+    // If user clears the input, we treat it as 0
+    if (value === '') {
+      setCountError(false);
+      onCountsChange({ ...counts, [type]: 0 });
+      return;
+    }
+
+    // Strictly allow only whole numbers (digits only)
+    // Reject decimals, negative signs, letters, and scientific notation
+    // We use a regex that matches only digits from start to end
+    if (!/^\d+$/.test(value)) {
+      // If it's not a valid whole number, we force the state to stay as is
+      // but we need to trigger a re-render to clear the invalid character from the input
+      // since it's a controlled component.
+      onCountsChange({ ...counts });
+      return;
+    }
+
+    let numValue = parseInt(value, 10);
 
     if (numValue > 50) {
       numValue = 50;
@@ -195,32 +213,32 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <h3 className="section-subtitle" style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '0.5rem', marginTop: '1rem' }}>Entity Counts</h3>
           <div className="input-group">
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               value={counts.rock}
               onChange={(e) => handleCountChange('rock', e.target.value)}
               disabled={isRunning}
-              min="0"
-              max="50"
+              placeholder="0"
             />
           </div>
           <div className="input-group">
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               value={counts.paper}
               onChange={(e) => handleCountChange('paper', e.target.value)}
               disabled={isRunning}
-              min="0"
-              max="50"
+              placeholder="0"
             />
           </div>
           <div className="input-group">
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               value={counts.scissors}
               onChange={(e) => handleCountChange('scissors', e.target.value)}
               disabled={isRunning}
-              min="0"
-              max="50"
+              placeholder="0"
             />
           </div>
           {countError && (
