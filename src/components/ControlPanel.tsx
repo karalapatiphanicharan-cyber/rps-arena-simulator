@@ -211,35 +211,37 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
 
           <h3 className="section-subtitle" style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '0.5rem', marginTop: '1rem' }}>Entity Counts</h3>
-          <div className="input-group">
-            <input
-              type="text"
-              inputMode="numeric"
-              value={counts.rock}
-              onChange={(e) => handleCountChange('rock', e.target.value)}
-              disabled={isRunning}
-              placeholder="0"
-            />
-          </div>
-          <div className="input-group">
-            <input
-              type="text"
-              inputMode="numeric"
-              value={counts.paper}
-              onChange={(e) => handleCountChange('paper', e.target.value)}
-              disabled={isRunning}
-              placeholder="0"
-            />
-          </div>
-          <div className="input-group">
-            <input
-              type="text"
-              inputMode="numeric"
-              value={counts.scissors}
-              onChange={(e) => handleCountChange('scissors', e.target.value)}
-              disabled={isRunning}
-              placeholder="0"
-            />
+          <div className="entity-counts-row">
+            <div className="input-group">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={counts.rock}
+                onChange={(e) => handleCountChange('rock', e.target.value)}
+                disabled={isRunning}
+                placeholder="0"
+              />
+            </div>
+            <div className="input-group">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={counts.paper}
+                onChange={(e) => handleCountChange('paper', e.target.value)}
+                disabled={isRunning}
+                placeholder="0"
+              />
+            </div>
+            <div className="input-group">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={counts.scissors}
+                onChange={(e) => handleCountChange('scissors', e.target.value)}
+                disabled={isRunning}
+                placeholder="0"
+              />
+            </div>
           </div>
           {countError && (
               <p style={{ color: '#EF4444', fontSize: '0.75rem', marginTop: '0.5rem', fontWeight: '600' }}>

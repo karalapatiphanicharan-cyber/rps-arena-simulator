@@ -26,7 +26,6 @@ export class GameEngine {
   private ctx: CanvasRenderingContext2D;
   private arena: ArenaDimensions;
   private shape: ArenaShape = 'rectangle';
-  private animationId: number | null = null;
   private status: GameStatus = 'idle';
   private simulationSpeed: number = 1;
   private obstacleDensity: ObstacleDensity = 'off';
@@ -59,6 +58,8 @@ export class GameEngine {
   private onStateChange: (state: GameState) => void;
   private lastNotifyTime: number = 0;
   private readonly THROTTLE_MS = 200;
+  private animationId: number | null = null;
+  private isDestroyed: boolean = false;
 
   constructor(
     ctx: CanvasRenderingContext2D,
@@ -69,6 +70,34 @@ export class GameEngine {
     this.arena = arena;
     this.onStateChange = onStateChange;
     this.particleManager = new ParticleManager(arena.width, arena.height);
+    this.startAnimationLoop();
+  }
+
+  private startAnimationLoop() {
+    const tick = () => {
+      if (this.isDestroyed) return;
+
+      // Particles move slowly when idle/paused for a subtle ambient effect
+      const particleSpeed = this.status === 'running' ? this.simulationSpeed : 0.5;
+      this.particleManager.update(particleSpeed);
+      this.effectManager.update();
+
+      if (this.status === 'running') {
+        this.update();
+      }
+
+      this.draw();
+      this.animationId = requestAnimationFrame(tick);
+    };
+    this.animationId = requestAnimationFrame(tick);
+  }
+
+  destroy() {
+    this.isDestroyed = true;
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
   }
 
   setArenaShape(shape: ArenaShape) {
@@ -386,32 +415,17 @@ export class GameEngine {
     }
     this.status = 'running';
     this.notifyState(null, true);
-    const loop = () => {
-      if (this.status !== 'running') return;
-      this.update();
-      this.draw();
-      this.animationId = requestAnimationFrame(loop);
-    };
-    this.animationId = requestAnimationFrame(loop);
   }
 
   pause() {
     if (this.status !== 'running') return;
     this.status = 'paused';
     this.elapsedAtPause = (Date.now() - this.startTime) / 1000;
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-      this.animationId = null;
-    }
     this.notifyState(null, true);
   }
 
   stop() {
     this.status = 'idle';
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-      this.animationId = null;
-    }
   }
 
   reset() {
@@ -586,8 +600,6 @@ export class GameEngine {
         });
     }
 
-    this.particleManager.update(sm);
-    this.effectManager.update();
 
     // Update moving obstacles
     const allObs = [...this.obstacles, ...this.manualObstacles];
@@ -1049,7 +1061,6 @@ export class GameEngine {
     if (activeTypes.length === 1 && this.entities.length > 0) {
       this.status = 'finished';
       soundManager.playWinner();
-      if (this.animationId) cancelAnimationFrame(this.animationId);
       this.notifyState(activeTypes[0], true);
     } else {
       this.notifyState();
