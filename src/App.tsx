@@ -292,6 +292,11 @@ function App() {
 
   const handleReset = useCallback(() => {
     if (engineRef.current) {
+      setObstacles('off');
+      setPowerZones(false);
+      engineRef.current.setObstacles('off');
+      engineRef.current.setPowerZones(false);
+      engineRef.current.setManualFeatures([], []);
       engineRef.current.reset();
       if (nextRoundTimerRef.current) {
           clearTimeout(nextRoundTimerRef.current);
@@ -329,6 +334,7 @@ function App() {
           engineRef.current.setCrazyMode(false);
           engineRef.current.setObstacles('off');
           engineRef.current.setPowerZones(false);
+          engineRef.current.setManualFeatures([], []);
           engineRef.current.setAdvancedSimulation(false, false, 'normal', 'random');
           engineRef.current.reset();
       }

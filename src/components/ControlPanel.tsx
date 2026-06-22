@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type {
     GameCounts,
     PlayerNames,
@@ -117,8 +117,18 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   expandedStates,
   onToggleSection
 }) => {
+  const [countError, setCountError] = useState(false);
+
   const handleCountChange = (type: keyof GameCounts, value: string) => {
-    const numValue = parseInt(value) || 0;
+    let numValue = parseInt(value) || 0;
+
+    if (numValue > 50) {
+      numValue = 50;
+      setCountError(true);
+    } else {
+      setCountError(false);
+    }
+
     onCountsChange({ ...counts, [type]: numValue });
   };
 
@@ -189,6 +199,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               onChange={(e) => handleCountChange('rock', e.target.value)}
               disabled={isRunning}
               min="0"
+              max="50"
             />
           </div>
           <div className="input-group">
@@ -198,6 +209,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               onChange={(e) => handleCountChange('paper', e.target.value)}
               disabled={isRunning}
               min="0"
+              max="50"
             />
           </div>
           <div className="input-group">
@@ -207,8 +219,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               onChange={(e) => handleCountChange('scissors', e.target.value)}
               disabled={isRunning}
               min="0"
+              max="50"
             />
           </div>
+          {countError && (
+              <p style={{ color: '#EF4444', fontSize: '0.75rem', marginTop: '0.5rem', fontWeight: '600' }}>
+                  Maximum allowed per entity type is 50.
+              </p>
+          )}
         </div>
       </CollapsibleSection>
 
