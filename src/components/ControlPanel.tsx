@@ -164,7 +164,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <button
               onClick={onStart}
               disabled={status === 'running' || status === 'paused'}
-              className="btn btn-start"
+              className={`btn btn-start ${status === 'idle' ? 'idle-pulse' : ''}`}
             >
               Start Battle
             </button>

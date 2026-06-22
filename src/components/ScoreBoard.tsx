@@ -2,6 +2,7 @@ import React from 'react';
 import type { PlayerNames, EntityType, GameStats, TournamentState, GameStatus } from '../types/game';
 import CollapsibleSection from './CollapsibleSection';
 import TypeIcon from './TypeIcon';
+import CountDisplay from './CountDisplay';
 
 interface ScoreBoardProps {
   playerNames: PlayerNames;
@@ -59,21 +60,21 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ playerNames, stats, tournament,
               <span className="emoji"><TypeIcon type="rock" size={24} /></span>
               <span className="name">{playerNames.rock}</span>
             </div>
-            <span className="count">{counts.rock}</span>
+            <CountDisplay className="count" count={counts.rock} />
           </div>
           <div className="score-card paper">
             <div className="info">
               <span className="emoji"><TypeIcon type="paper" size={24} /></span>
               <span className="name">{playerNames.paper}</span>
             </div>
-            <span className="count">{counts.paper}</span>
+            <CountDisplay className="count" count={counts.paper} />
           </div>
           <div className="score-card scissors">
             <div className="info">
               <span className="emoji"><TypeIcon type="scissors" size={24} /></span>
               <span className="name">{playerNames.scissors}</span>
             </div>
-            <span className="count">{counts.scissors}</span>
+            <CountDisplay className="count" count={counts.scissors} />
           </div>
         </div>
       </CollapsibleSection>

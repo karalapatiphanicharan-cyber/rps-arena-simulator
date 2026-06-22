@@ -70,9 +70,10 @@ export class Entity implements EntityData {
     // Animations
     this.floatOffset += this.floatSpeed * speedMultiplier;
 
-    // Slight rotation based on movement
+    // Slight rotation based on movement + subtle wobble
     const targetRotation = Math.atan2(this.velocityY, this.velocityX);
-    this.rotation = targetRotation * 0.2;
+    const wobble = Math.sin(this.floatOffset * 0.5) * 0.1;
+    this.rotation = targetRotation * 0.2 + wobble;
 
     this.constrainSpeed();
   }
