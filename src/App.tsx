@@ -73,7 +73,7 @@ function App() {
   });
 
   const [arenaShape, setArenaShape] = useState<ArenaShape>('rectangle');
-  const [simulationSpeed, setSimulationSpeed] = useState(1);
+  const [simulationSpeed, setSimulationSpeed] = useState(1.5);
   const [isMuted, setIsMuted] = useState(false);
   const [tournamentType, setTournamentType] = useState<TournamentType>('single');
   const [tournamentState, setTournamentState] = useState<TournamentState>(
@@ -108,7 +108,7 @@ function App() {
     status: 'idle',
     winner: null,
     arenaShape: 'rectangle',
-    simulationSpeed: 1,
+    simulationSpeed: 1.5,
     events: [],
     stats: {
         totalCollisions: 0,
@@ -326,7 +326,7 @@ function App() {
       const defaultCounts = { rock: 10, paper: 10, scissors: 10 };
       setCounts(defaultCounts);
       setArenaShape('rectangle');
-      setSimulationSpeed(1);
+      setSimulationSpeed(1.5);
       setTournamentType('single');
       setTournamentState(TournamentManager.getInitialState('single'));
       setCrazyMode(false);
@@ -340,7 +340,7 @@ function App() {
 
       if (engineRef.current) {
           engineRef.current.setArenaShape('rectangle');
-          engineRef.current.setSimulationSpeed(1);
+          engineRef.current.setSimulationSpeed(1.5);
           engineRef.current.setCrazyMode(false);
           engineRef.current.setObstacles('off');
           engineRef.current.setPowerZones(false);
