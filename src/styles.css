@@ -867,3 +867,236 @@ canvas {
   50% { transform: scale(1.1); color: var(--text-color); }
   100% { transform: scale(1); }
 }
+
+/* Global Footer Styles */
+.global-footer {
+  margin-top: 2rem;
+  padding: 2rem 1rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 1rem 1rem 0 0;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.footer-link-btn {
+  background: none;
+  border: none;
+  color: #94A3B8;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.footer-link-btn:hover {
+  color: var(--text-color);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.footer-link-btn:focus-visible {
+  outline: 2px solid var(--paper-color);
+  outline-offset: 2px;
+}
+
+.footer-info {
+  color: #64748B;
+  font-size: 0.8rem;
+}
+
+/* Info Modal Styles */
+.info-modal-overlay {
+  z-index: 200; /* Above regular modals */
+}
+
+.info-modal-content {
+  max-width: 800px;
+  width: 95%;
+  max-height: 90vh;
+  padding: 2.5rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.info-modal-body {
+  overflow-y: auto;
+  margin-bottom: 2rem;
+  padding-right: 1rem;
+  scrollbar-width: thin;
+}
+
+.info-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.info-modal-body::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.info-modal-body h2 {
+  color: var(--text-color);
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.75rem;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.info-modal-body p {
+  line-height: 1.6;
+  color: #CBD5E1;
+  margin-bottom: 1rem;
+}
+
+.info-modal-body ul {
+  padding-left: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-modal-body li {
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+  color: #CBD5E1;
+}
+
+.faq-container details {
+  background: #111827;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  transition: var(--transition);
+}
+
+.faq-container details[open] {
+  border-color: var(--paper-color);
+}
+
+.faq-container summary {
+  padding: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-color);
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.faq-container summary::after {
+  content: '+';
+  font-family: monospace;
+  font-size: 1.2rem;
+  color: var(--paper-color);
+}
+
+.faq-container details[open] summary::after {
+  content: '-';
+}
+
+.faq-container p {
+  padding: 0.75rem;
+  margin: 0;
+  border-top: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #94A3B8;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: var(--transition);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close-modal-btn:hover {
+  color: var(--text-color);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.close-bottom-btn {
+  align-self: flex-end;
+  min-width: 120px;
+}
+
+.github-link {
+  color: var(--paper-color);
+  text-decoration: none;
+  word-break: break-all;
+  font-weight: 500;
+}
+
+.github-link:hover {
+  text-decoration: underline;
+}
+
+/* Ad Placeholders */
+.ad-placeholder {
+  background: rgba(31, 41, 55, 0.3);
+  border: 1px dashed var(--border-color);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4B5563;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 1rem 0;
+  transition: var(--transition);
+}
+
+.arena-ad {
+  width: 100%;
+  min-height: 90px;
+}
+
+.footer-ad {
+  width: 100%;
+  max-width: 728px;
+  min-height: 90px;
+  margin: 2rem auto;
+}
+
+.ad-placeholder::before {
+  content: 'Reserved Ad Space';
+}
+
+@media (max-width: 640px) {
+  .footer-links {
+    gap: 1rem;
+  }
+
+  .info-modal-content {
+    padding: 1.5rem;
+  }
+
+  .info-modal-body h2 {
+    font-size: 1.5rem;
+  }
+}

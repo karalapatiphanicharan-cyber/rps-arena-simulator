@@ -27,6 +27,8 @@ import MatchHistory from './components/MatchHistory';
 import CrazyEventBanner from './components/CrazyEventBanner';
 import HelpCenter from './components/HelpCenter';
 import RpsLogo from './components/RpsLogo';
+import Footer from './components/Footer';
+import InfoModals from './components/InfoModals';
 import { soundManager } from './game/SoundManager';
 
 const ARENA_WIDTH = 1000;
@@ -98,6 +100,7 @@ function App() {
   });
   const [selectedTool, setSelectedTool] = useState<BuilderTool>('wall');
   const [isEditing, setIsEditing] = useState(false);
+  const [activeModal, setActiveModal] = useState<string | null>(null);
 
   // State for GameState notifications
   const [gameState, setGameState] = useState<GameState>({
@@ -800,6 +803,10 @@ function App() {
           <div className="card progress-card">
               <ProgressIndicator counts={currentCounts} status={gameState.status} />
           </div>
+
+          <div className="ad-placeholder arena-ad" aria-hidden="true">
+            {/* Future AdSense Slot: Below Arena */}
+          </div>
         </section>
 
         <aside className={`scoreboard-column ${showRightDrawer ? 'mobile-visible' : ''}`}>
@@ -894,6 +901,14 @@ function App() {
         onRestart={handleRestart}
         onResetTournament={handleResetTournament}
       />
+
+      <Footer onOpenModal={setActiveModal} />
+
+      <div className="ad-placeholder footer-ad" aria-hidden="true">
+        {/* Future AdSense Slot: Bottom of Page */}
+      </div>
+
+      <InfoModals activeModal={activeModal} onClose={() => setActiveModal(null)} />
     </div>
   );
 }
