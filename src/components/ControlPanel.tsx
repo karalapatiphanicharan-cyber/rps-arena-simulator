@@ -141,8 +141,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
     let numValue = parseInt(value, 10);
 
-    if (numValue > 50) {
-      numValue = 50;
+    if (numValue > 75) {
+      numValue = 75;
       setCountError(true);
     } else {
       setCountError(false);
@@ -245,7 +245,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
           {countError && (
               <p style={{ color: '#EF4444', fontSize: '0.75rem', marginTop: '0.5rem', fontWeight: '600' }}>
-                  Maximum allowed per entity type is 50.
+                  Maximum allowed per entity type is 75.
               </p>
           )}
         </div>
